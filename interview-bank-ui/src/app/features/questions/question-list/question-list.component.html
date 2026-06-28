@@ -1,65 +1,63 @@
-<div class="question-list-page">
+<div class="page">
 
   <div class="page-header">
     <h1>Question Bank</h1>
-    <a mat-flat-button color="primary" routerLink="/questions/new">
-      <mat-icon>add</mat-icon> Add question
+    <a class="btn-primary" routerLink="/questions/new">
+      <mat-icon style="font-size:18px;width:18px;height:18px;">add</mat-icon>
+      Add question
     </a>
   </div>
 
-  <mat-form-field appearance="outline" class="search-field">
-    <mat-label>Search questions</mat-label>
-    <mat-icon matPrefix>search</mat-icon>
+  <mat-form-field appearance="outline" style="width:100%;margin-bottom:20px;">
+    <mat-icon matPrefix style="color:var(--text-muted);">search</mat-icon>
     <input matInput
            [value]="searchText()"
            (input)="onSearchInput($any($event.target).value)"
-           placeholder="Type to search…" />
+           placeholder="Search questions…" />
   </mat-form-field>
 
   <div class="filter-row">
     <span class="filter-label">Topic</span>
-    <mat-chip-listbox multiple>
+    <div class="chip-group">
       @for (topic of topics(); track topic.id) {
-        <mat-chip-option
-          [selected]="selectedTopicIds().includes(topic.id)"
-          (click)="toggleTopic(topic.id)">
+        <button class="filter-chip" [class.selected]="selectedTopicIds().includes(topic.id)"
+                (click)="toggleTopic(topic.id)">
           {{ topic.name }}
-          <span class="chip-count">{{ topic.questionCount }}</span>
-        </mat-chip-option>
+        </button>
       }
-    </mat-chip-listbox>
+    </div>
   </div>
 
   <div class="filter-row">
     <span class="filter-label">Difficulty</span>
-    <mat-chip-listbox multiple>
+    <div class="chip-group">
       @for (d of difficulties; track d.value) {
-        <mat-chip-option
-          [selected]="selectedDiffs().includes(d.value)"
-          (click)="toggleDifficulty(d.value)">
+        <button class="filter-chip" [class.selected]="selectedDiffs().includes(d.value)"
+                (click)="toggleDifficulty(d.value)">
           {{ d.label }}
-        </mat-chip-option>
+        </button>
       }
-    </mat-chip-listbox>
+    </div>
+    @if (selectedTopicIds().length || selectedDiffs().length || practicedFilter() !== 'all' || searchText()) {
+      <button class="btn-ghost" style="padding:5px 14px;font-size:13px;" (click)="clearFilters()">Clear</button>
+    }
   </div>
 
   <div class="filter-row">
     <span class="filter-label">Practiced</span>
-    <mat-chip-listbox>
+    <div class="chip-group">
       @for (opt of ['all', 'yes', 'no']; track opt) {
-        <mat-chip-option
-          [selected]="practicedFilter() === opt"
-          (click)="setPracticed($any(opt))">
+        <button class="filter-chip" [class.selected]="practicedFilter() === opt"
+                (click)="setPracticed($any(opt))">
           {{ opt === 'all' ? 'All' : opt === 'yes' ? 'Practiced' : 'Not practiced' }}
-        </mat-chip-option>
+        </button>
       }
-    </mat-chip-listbox>
-    @if (selectedTopicIds().length || selectedDiffs().length || practicedFilter() !== 'all' || searchText()) {
-      <button mat-button (click)="clearFilters()">Clear filters</button>
-    }
+    </div>
   </div>
 
-  @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" style="margin-bottom:16px;" />
+  }
 
   @if (!loading() && questions().length === 0) {
     <app-empty-state
@@ -71,25 +69,31 @@
   }
 
   @for (q of questions(); track q.id) {
-    <div class="question-card">
-      <div class="question-card__body">
-        <p class="question-card__text">{{ q.text }}</p>
-        <div class="question-card__meta">
-          <app-difficulty-badge [difficulty]="q.difficulty" />
-          <span class="topic-chip">{{ q.topicName }}</span>
+    <div class="question-card glass-card">
+      <div class="diff-dot" [class]="['', 'easy', 'medium', 'hard'][q.difficulty]"></div>
+
+      <div class="card-body">
+        <p class="card-text">{{ q.text }}</p>
+        <div class="card-meta">
+          <span class="topic-pill">{{ q.topicName }}</span>
+          <span class="tag" [class]="['', 'tag-easy', 'tag-medium', 'tag-hard'][q.difficulty]">
+            {{ ['', 'Easy', 'Medium', 'Hard'][q.difficulty] }}
+          </span>
           @if (q.isPracticed) { <span class="practiced-tag">✓ Practiced</span> }
         </div>
       </div>
-      <div class="question-card__actions">
+
+      <div class="card-actions">
         <button mat-icon-button
                 [matTooltip]="q.isPracticed ? 'Mark as not practiced' : 'Mark as practiced'"
-                (click)="togglePracticed(q)">
+                (click)="togglePracticed(q); $event.stopPropagation()">
           <mat-icon>{{ q.isPracticed ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
         </button>
-        <a mat-icon-button matTooltip="View / edit" [routerLink]="['/questions', q.id]">
+        <a mat-icon-button [routerLink]="['/questions', q.id]" matTooltip="View / edit">
           <mat-icon>edit</mat-icon>
         </a>
-        <button mat-icon-button color="warn" matTooltip="Delete" (click)="confirmDelete(q)">
+        <button mat-icon-button color="warn" matTooltip="Delete"
+                (click)="confirmDelete(q); $event.stopPropagation()">
           <mat-icon>delete</mat-icon>
         </button>
       </div>

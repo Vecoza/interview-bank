@@ -31,6 +31,11 @@ public class Question
 
     public DateTimeOffset? LastPracticedAt { get; set; }
 
+    public double           EaseFactor    { get; set; } = 2.5;
+    public int              SrInterval    { get; set; } = 0;
+    public int              SrRepetitions { get; set; } = 0;
+    public DateTimeOffset?  NextReviewAt  { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;

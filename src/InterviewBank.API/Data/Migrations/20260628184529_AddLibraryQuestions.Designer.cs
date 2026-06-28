@@ -3,6 +3,7 @@ using System;
 using InterviewBank.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace InterviewBank.API.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260628184529_AddLibraryQuestions")]
+    partial class AddLibraryQuestions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -162,11 +165,6 @@ namespace InterviewBank.API.Data.Migrations
                     b.Property<int>("Difficulty")
                         .HasColumnType("integer");
 
-                    b.Property<double>("EaseFactor")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("double precision")
-                        .HasDefaultValue(2.5);
-
                     b.Property<string>("ExpectedAnswer")
                         .HasColumnType("text");
 
@@ -174,9 +172,6 @@ namespace InterviewBank.API.Data.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<DateTimeOffset?>("LastPracticedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("NextReviewAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PersonalNotes")
@@ -188,12 +183,6 @@ namespace InterviewBank.API.Data.Migrations
                     b.Property<string>("Source")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
-
-                    b.Property<int>("SrInterval")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("SrRepetitions")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Text")
                         .IsRequired()
@@ -215,8 +204,6 @@ namespace InterviewBank.API.Data.Migrations
                     b.HasIndex("Difficulty");
 
                     b.HasIndex("IsPracticed");
-
-                    b.HasIndex("NextReviewAt");
 
                     b.HasIndex("TopicId");
 

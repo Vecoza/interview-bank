@@ -27,6 +27,8 @@ public class MockInterviewService
         if (dto.Difficulties?.Count > 0)
             query = query.Where(q => dto.Difficulties.Contains((int)q.Difficulty));
 
+        var now = DateTimeOffset.UtcNow;
+
         query = dto.Strategy switch
         {
             SelectionStrategy.LeastRecentlyPracticed =>
@@ -34,6 +36,9 @@ public class MockInterviewService
             SelectionStrategy.HardestFirst =>
                 query.OrderByDescending(q => q.Difficulty)
                      .ThenBy(_ => EF.Functions.Random()),
+            SelectionStrategy.DueForReview =>
+                query.Where(q => q.NextReviewAt == null || q.NextReviewAt <= now)
+                     .OrderBy(q => q.NextReviewAt ?? DateTimeOffset.MinValue),
             _ => query.OrderBy(_ => EF.Functions.Random())
         };
 
@@ -79,6 +84,8 @@ public class MockInterviewService
             question.LastPracticedAt = DateTimeOffset.UtcNow;
             question.IsPracticed     = true;
             question.UpdatedAt       = DateTimeOffset.UtcNow;
+
+            SpacedRepetitionService.Apply(question, a.SelfAssessment);
         }
 
         await _db.SaveChangesAsync();

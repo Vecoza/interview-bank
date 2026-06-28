@@ -1,0 +1,93 @@
+@if (isFullScreen()) {
+  <router-outlet />
+} @else {
+  <div class="app-layout" [style.display]="'flex'" [style.height]="'100vh'">
+
+    @if (isAuthenticated()) {
+      <aside class="sidebar" style="
+        width: 240px;
+        flex-shrink: 0;
+        background: var(--bg-secondary);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 24px 12px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: hidden;
+      ">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 8px 28px;">
+          <span style="font-size:22px;font-weight:700;color:var(--accent);">IQB</span>
+          <span style="font-size:13px;color:var(--text-secondary);line-height:1.3;">Interview<br>Bank</span>
+        </div>
+
+        <nav style="display:flex;flex-direction:column;gap:4px;flex:1;">
+          @for (item of navItems; track item.path) {
+            <a [routerLink]="item.path"
+               routerLinkActive="nav-active"
+               [routerLinkActiveOptions]="{exact: item.path === '/'}"
+               style="
+                 display:flex;align-items:center;gap:12px;
+                 padding:12px 16px;border-radius:10px;
+                 color:var(--text-secondary);font-size:14px;font-weight:500;
+                 text-decoration:none;cursor:pointer;
+                 transition:all 150ms ease;
+               "
+               onmouseover="if(!this.classList.contains('nav-active'))this.style.background='rgba(255,255,255,0.04)'"
+               onmouseout="if(!this.classList.contains('nav-active'))this.style.background='transparent'">
+              <mat-icon style="font-size:20px;width:20px;height:20px;">{{ item.icon }}</mat-icon>
+              {{ item.label }}
+            </a>
+          }
+        </nav>
+
+        <button (click)="logout()" style="
+          display:flex;align-items:center;gap:12px;
+          padding:12px 16px;border-radius:10px;
+          background:transparent;border:none;
+          color:var(--text-muted);font-size:14px;font-weight:500;
+          cursor:pointer;width:100%;
+          transition:all 150ms ease;
+          font-family:inherit;
+        "
+        onmouseover="this.style.color='var(--danger)';this.style.background='rgba(239,68,68,0.08)'"
+        onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent'">
+          <mat-icon style="font-size:20px;width:20px;height:20px;">logout</mat-icon>
+          Logout
+        </button>
+      </aside>
+
+      <nav class="bottom-nav">
+        @for (item of navItems; track item.path) {
+          <a [routerLink]="item.path" routerLinkActive="nav-active"
+             style="display:flex;flex-direction:column;align-items:center;gap:4px;
+                    color:var(--text-muted);text-decoration:none;font-size:11px;padding:8px;">
+            <mat-icon>{{ item.icon }}</mat-icon>
+            {{ item.label }}
+          </a>
+        }
+      </nav>
+    }
+
+    <main class="main-content" style="
+      flex:1;
+      overflow-y:auto;
+      height:100vh;
+    ">
+      <router-outlet />
+    </main>
+
+  </div>
+}
+
+<style>
+  .nav-active {
+    background: var(--accent-glow) !important;
+    color: var(--accent) !important;
+    font-weight: 600 !important;
+  }
+  .nav-active mat-icon {
+    color: var(--accent) !important;
+  }
+</style>

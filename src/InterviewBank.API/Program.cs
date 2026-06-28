@@ -72,6 +72,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
     await TopicSeeder.SeedAsync(scope.ServiceProvider);
+    await LibrarySeeder.SeedAsync(scope.ServiceProvider);
 }
 
 app.UseMiddleware<ExceptionMiddleware>();

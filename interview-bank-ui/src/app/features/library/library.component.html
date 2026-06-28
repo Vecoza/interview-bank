@@ -1,0 +1,108 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1>Question Library</h1>
+      <p style="margin:4px 0 0;font-size:14px;color:var(--text-secondary);">
+        Browse curated interview questions and add them to your bank.
+      </p>
+    </div>
+    @if (selectedCount() > 0) {
+      <button class="btn-primary" [disabled]="importing()" (click)="importSelected()"
+              style="flex-shrink:0;">
+        @if (importing()) { <mat-spinner diameter="18" /> }
+        @else { <mat-icon style="font-size:18px;width:18px;height:18px;">download</mat-icon> }
+        Import selected ({{ selectedCount() }})
+      </button>
+    }
+  </div>
+
+  <div class="filter-row">
+    <span class="filter-label">Topic</span>
+    <div class="chip-group">
+      @for (t of topics; track t) {
+        <button class="filter-chip" [class.selected]="selectedTopic() === t" (click)="setTopic(t)">
+          {{ t }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="filter-row" style="margin-bottom:24px;">
+    <span class="filter-label">Difficulty</span>
+    <div class="chip-group">
+      @for (d of difficulties; track d.value) {
+        <button class="filter-chip" [class.selected]="selectedDiff() === d.value" (click)="setDiff(d.value)">
+          {{ d.label }}
+        </button>
+      }
+    </div>
+    @if (filtered().length > 0) {
+      <button class="btn-ghost" style="padding:5px 14px;font-size:13px;margin-left:auto;"
+              (click)="toggleAll()">
+        {{ allFilteredSelected() ? 'Deselect all' : 'Select all (' + filtered().length + ')' }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div style="display:flex;justify-content:center;padding:60px 0;">
+      <mat-spinner diameter="40" />
+    </div>
+  }
+
+  @if (!loading() && filtered().length === 0) {
+    <div style="text-align:center;padding:64px 16px;color:var(--text-muted);">
+      <mat-icon style="font-size:56px;width:56px;height:56px;opacity:0.25;">auto_stories</mat-icon>
+      <p style="margin:12px 0 0;font-size:15px;">No questions match the selected filters.</p>
+    </div>
+  }
+
+  @for (q of filtered(); track q.id) {
+    <div class="question-card glass-card" [class.is-selected]="selected().has(q.id)"
+         (click)="toggleSelect(q.id)" style="cursor:pointer;">
+
+      <div class="diff-dot" [class]="['','easy','medium','hard'][q.difficulty]"></div>
+
+      <div class="card-body">
+        <p class="card-text">{{ q.text }}</p>
+        <div class="card-meta">
+          <span class="topic-pill">{{ q.topicName }}</span>
+          <span class="tag" [class]="['','tag-easy','tag-medium','tag-hard'][q.difficulty]">
+            {{ ['','Easy','Medium','Hard'][q.difficulty] }}
+          </span>
+        </div>
+      </div>
+
+      <div style="flex-shrink:0;display:flex;align-items:center;padding-left:12px;">
+        <div class="select-circle" [class.checked]="selected().has(q.id)">
+          @if (selected().has(q.id)) {
+            <mat-icon style="font-size:18px;width:18px;height:18px;color:var(--accent);">check</mat-icon>
+          }
+        </div>
+      </div>
+
+    </div>
+  }
+
+</div>
+
+<style>
+.question-card.is-selected {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.06);
+}
+.select-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+}
+.select-circle.checked {
+  border-color: var(--accent);
+}
+</style>

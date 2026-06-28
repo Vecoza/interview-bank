@@ -1,0 +1,126 @@
+<div class="page">
+
+  <div class="page-header">
+    <h1>Dashboard</h1>
+    <a class="btn-primary" routerLink="/mock-interview">
+      <mat-icon style="font-size:18px;width:18px;height:18px;">play_arrow</mat-icon>
+      Start session
+    </a>
+  </div>
+
+  @if (loading()) {
+    <mat-spinner diameter="40" />
+  }
+
+  @if (stats(); as s) {
+
+    <div class="stat-grid">
+      <div class="glass-card stat-card">
+        <p class="stat-label">Total questions</p>
+        <p class="stat-value">{{ s.totalQuestions }}</p>
+        <a routerLink="/questions" style="font-size:12px;color:var(--accent);text-decoration:none;">View all</a>
+      </div>
+      <div class="glass-card stat-card">
+        <p class="stat-label">Practiced</p>
+        <p class="stat-value">{{ s.practicedCount }}</p>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">{{ practicedPct() }}% of total</p>
+      </div>
+      <div class="glass-card stat-card" [style.border-color]="s.dueForReviewCount > 0 ? 'var(--accent)' : ''">
+        <p class="stat-label">Due for review</p>
+        <p class="stat-value" [style.color]="s.dueForReviewCount > 0 ? 'var(--accent)' : ''">
+          {{ s.dueForReviewCount }}
+        </p>
+        <a routerLink="/mock-interview" style="font-size:12px;color:var(--accent);text-decoration:none;"
+           [style.visibility]="s.dueForReviewCount > 0 ? 'visible' : 'hidden'">
+          Review now
+        </a>
+      </div>
+      <div class="glass-card stat-card">
+        <p class="stat-label">Streak</p>
+        <p class="stat-value">{{ s.practiceStreak }}</p>
+        <p style="font-size:12px;color:var(--text-muted);margin:0;">{{ s.practiceStreak === 1 ? 'day' : 'days' }}</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;color:var(--text-secondary);">Overall progress</span>
+        <span style="font-size:13px;color:var(--text-primary);font-weight:600;">{{ practicedPct() }}%</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;background:var(--accent);border-radius:3px;transition:width 0.6s;"
+             [style.width.%]="practicedPct()"></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:8px;">
+
+      <div class="glass-card">
+        <h2 style="font-size:14px;font-weight:600;color:var(--text-secondary);margin:0 0 16px;
+                   text-transform:uppercase;letter-spacing:0.5px;">By difficulty</h2>
+        <canvas #difficultyChart></canvas>
+      </div>
+
+      <div class="glass-card">
+        <h2 style="font-size:14px;font-weight:600;color:var(--text-secondary);margin:0 0 16px;
+                   text-transform:uppercase;letter-spacing:0.5px;">By topic (top 10)</h2>
+        <canvas #topicChart></canvas>
+      </div>
+
+    </div>
+
+    @if (s.weakestTopics.length > 0) {
+      <div class="glass-card" style="margin-top:8px;">
+        <h2 style="font-size:14px;font-weight:600;color:var(--text-secondary);margin:0 0 16px;
+                   text-transform:uppercase;letter-spacing:0.5px;">Weakest topics</h2>
+        @for (w of s.weakestTopics; track w.topicName) {
+          <div class="weak-row">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:14px;color:var(--text-primary);">{{ w.topicName }}</span>
+              <span style="font-size:13px;color:var(--danger);font-weight:600;">{{ missedPct(w.missedRatio) }} missed</span>
+            </div>
+            <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+              <div style="height:100%;background:var(--danger);border-radius:2px;"
+                   [style.width]="missedPct(w.missedRatio)"></div>
+            </div>
+            <p style="font-size:11px;color:var(--text-muted);margin:4px 0 0;">
+              {{ w.missedCount }} missed of {{ w.totalAnswered }} answered
+            </p>
+          </div>
+        }
+      </div>
+    }
+
+    @if (s.recentSessions.length > 0) {
+      <div class="glass-card" style="margin-top:8px;">
+        <h2 style="font-size:14px;font-weight:600;color:var(--text-secondary);margin:0 0 16px;
+                   text-transform:uppercase;letter-spacing:0.5px;">Recent sessions</h2>
+        @for (session of s.recentSessions; track session.sessionId) {
+          <div class="session-row">
+            <span style="font-size:13px;color:var(--text-muted);">{{ session.completedAt | date:'mediumDate' }}</span>
+            <span style="font-size:13px;color:var(--text-secondary);">{{ session.totalQuestions }} questions</span>
+            <div style="display:flex;gap:12px;margin-left:auto;">
+              <span style="font-size:13px;color:var(--success);">✓ {{ session.gotItCount }}</span>
+              <span style="font-size:13px;color:var(--warning);">~ {{ session.partialCount }}</span>
+              <span style="font-size:13px;color:var(--danger);">✗ {{ session.missedCount }}</span>
+            </div>
+            <span style="font-size:14px;font-weight:700;color:var(--text-primary);min-width:42px;text-align:right;">
+              {{ sessionScore(session) }}%
+            </span>
+          </div>
+        }
+      </div>
+    }
+
+    @if (s.recentSessions.length === 0 && s.totalQuestions === 0) {
+      <app-empty-state
+        icon="school"
+        title="No data yet"
+        message="Add questions and run your first mock interview to see stats here."
+        actionLabel="Add first question"
+        actionRoute="/questions/new" />
+    }
+
+  }
+
+</div>

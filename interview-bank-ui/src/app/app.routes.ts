@@ -74,5 +74,13 @@ export const routes: Routes = [
         .then(m => m.DashboardComponent)
   },
 
+  {
+    path: 'library',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/library/library.component')
+        .then(m => m.LibraryComponent)
+  },
+
   { path: '**', redirectTo: 'questions' }
 ];

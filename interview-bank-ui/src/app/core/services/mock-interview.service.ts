@@ -79,6 +79,10 @@ export class MockInterviewService {
 
   constructor(private http: HttpClient) {}
 
+  getDueCount() {
+    return this.http.get<{ count: number }>(`${this.api}/due-count`);
+  }
+
   start(request: StartSessionRequest) {
     return this.http.post<ActiveSession>(`${this.api}/start`, request, { withCredentials: true });
   }

@@ -1,0 +1,45 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  api-check:
+    name: API build check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.x"
+
+      - name: Restore & build
+        run: |
+          dotnet restore src/InterviewBank.API/InterviewBank.API.csproj
+          dotnet build   src/InterviewBank.API/InterviewBank.API.csproj --no-restore -c Release
+
+  ui-check:
+    name: UI build check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: interview-bank-ui/package-lock.json
+
+      - name: Install & build
+        working-directory: interview-bank-ui
+        run: |
+          npm ci
+          npm run build -- --configuration production
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"

@@ -1,57 +1,112 @@
-<div class="summary-page">
+<div class="page">
 
   @if (summary(); as s) {
-    <h1>Session complete</h1>
 
-    <div class="score-row">
-      <div class="score-circle">{{ scorePct() }}%</div>
-      <div class="score-stats">
-        <span class="got-it">✓ Got it: {{ s.gotItCount }}</span>
-        <span class="partial">~ Partial: {{ s.partialCount }}</span>
-        <span class="missed">✗ Missed: {{ s.missedCount }}</span>
-        <span class="avg-time">Avg time: {{ s.averageTimeTaken | number:'1.0-0' }}s</span>
+    <div class="page-header">
+      <h1>Session complete</h1>
+    </div>
+
+    <div class="glass-card" style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;margin-bottom:8px;">
+
+      <div style="position:relative;flex-shrink:0;">
+        <svg viewBox="0 0 120 120" width="120" height="120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" stroke-width="8" />
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent)" stroke-width="8"
+                  stroke-linecap="round" stroke-dasharray="326.7"
+                  [attr.stroke-dashoffset]="326.7 * (1 - scorePct() / 100)"
+                  transform="rotate(-90 60 60)"
+                  style="transition:stroke-dashoffset 1s ease;" />
+          <text x="60" y="60" text-anchor="middle" dominant-baseline="central"
+                fill="var(--text-primary)" font-size="22" font-weight="700" font-family="Inter,sans-serif">
+            {{ scorePct() }}%
+          </text>
+        </svg>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--success);display:inline-block;"></span>
+          <span style="font-size:14px;color:var(--text-secondary);">Got it: <strong style="color:var(--text-primary);">{{ s.gotItCount }}</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--warning);display:inline-block;"></span>
+          <span style="font-size:14px;color:var(--text-secondary);">Partially: <strong style="color:var(--text-primary);">{{ s.partialCount }}</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--danger);display:inline-block;"></span>
+          <span style="font-size:14px;color:var(--text-secondary);">Missed: <strong style="color:var(--text-primary);">{{ s.missedCount }}</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--border);display:inline-block;"></span>
+          <span style="font-size:14px;color:var(--text-secondary);">Avg time: <strong style="color:var(--text-primary);">{{ s.averageTimeTaken | number:'1.0-0' }}s</strong></span>
+        </div>
       </div>
     </div>
 
-    <mat-divider />
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+      <button class="btn-primary" style="height:44px;" (click)="startNew()">
+        <mat-icon>refresh</mat-icon> Start new session
+      </button>
+      <a class="btn-ghost" routerLink="/dashboard" style="height:44px;padding:0 20px;display:flex;align-items:center;gap:8px;">
+        <mat-icon>insights</mat-icon> Dashboard
+      </a>
+      <a class="btn-ghost" routerLink="/questions" style="height:44px;padding:0 20px;display:flex;align-items:center;gap:8px;">
+        <mat-icon>grid_view</mat-icon> Questions
+      </a>
+    </div>
 
-    <h2>Question breakdown</h2>
+    <h2 style="font-size:16px;font-weight:600;color:var(--text-secondary);margin:0 0 16px;
+               text-transform:uppercase;letter-spacing:0.5px;">Question breakdown</h2>
 
     @for (result of s.results; track result.questionOrder) {
-      <mat-card class="result-card">
-        <mat-card-content>
-          <div class="result-meta">
-            <span class="order">Q{{ result.questionOrder }}</span>
-            <app-difficulty-badge [difficulty]="result.difficulty" />
-            <span class="topic">{{ result.topicName }}</span>
-            <span class="time">{{ result.timeTakenSeconds }}s</span>
-            <span [class]="'assessment-label assessment-' + result.selfAssessment">
-              {{ assessmentLabel(result.selfAssessment) }}
-            </span>
-          </div>
+      <div class="glass-card result-card"
+           [style.border-left-color]="result.selfAssessment === 1 ? 'var(--success)' : result.selfAssessment === 2 ? 'var(--warning)' : 'var(--danger)'">
 
-          <p class="result-question">{{ result.questionText }}</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;color:var(--text-muted);
+                       background:var(--bg-elevated);border:1px solid var(--border);
+                       border-radius:6px;padding:2px 8px;">Q{{ result.questionOrder }}</span>
+          <span class="tag" [class]="['','tag-easy','tag-medium','tag-hard'][result.difficulty]">
+            {{ ['','Easy','Medium','Hard'][result.difficulty] }}
+          </span>
+          <span style="font-size:12px;color:var(--text-muted);background:var(--bg-elevated);
+                       border:1px solid var(--border);border-radius:20px;padding:2px 10px;">
+            {{ result.topicName }}
+          </span>
+          <span style="margin-left:auto;font-size:12px;color:var(--text-muted);">{{ result.timeTakenSeconds }}s</span>
+          <span [style.color]="result.selfAssessment === 1 ? 'var(--success)' : result.selfAssessment === 2 ? 'var(--warning)' : 'var(--danger)'"
+                style="font-size:13px;font-weight:600;">
+            {{ assessmentLabel(result.selfAssessment) }}
+          </span>
+        </div>
 
-          @if (result.userAnswer) {
-            <p class="result-label">Your answer</p>
-            <pre class="result-text">{{ result.userAnswer }}</pre>
-          }
+        <p style="font-size:15px;color:var(--text-primary);line-height:1.6;margin:0 0 12px;">
+          {{ result.questionText }}
+        </p>
 
-          @if (result.expectedAnswer) {
-            <p class="result-label">Model answer</p>
-            <pre class="result-text model">{{ result.expectedAnswer }}</pre>
-          }
-        </mat-card-content>
-      </mat-card>
+        @if (result.userAnswer) {
+          <p style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;
+                    letter-spacing:0.5px;margin:0 0 6px;">Your answer</p>
+          <pre class="notes-block" style="margin-bottom:12px;">{{ result.userAnswer }}</pre>
+        }
+
+        @if (result.expectedAnswer) {
+          <p style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;
+                    letter-spacing:0.5px;margin:0 0 6px;">Model answer</p>
+          <pre class="code-block">{{ result.expectedAnswer }}</pre>
+        }
+
+      </div>
     }
 
-    <div class="summary-actions">
-      <button mat-flat-button color="primary" (click)="startNew()">
-        Start new session
-      </button>
-      <a mat-stroked-button routerLink="/questions">Back to questions</a>
-      <a mat-stroked-button routerLink="/dashboard">View dashboard</a>
-    </div>
   }
 
 </div>
+
+<style>
+.result-card {
+  border-left: 3px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+</style>

@@ -1,63 +1,74 @@
-<div class="detail-page">
+<div class="page">
 
-  @if (loading()) {
-    <mat-spinner diameter="40" />
-  }
+  @if (loading()) { <mat-spinner diameter="40" /> }
 
   @if (question(); as q) {
-    <div class="page-header">
-      <a mat-icon-button routerLink="/questions"><mat-icon>arrow_back</mat-icon></a>
-      <div class="header-actions">
-        <button mat-stroked-button (click)="togglePracticed()"
-                [matTooltip]="q.isPracticed ? 'Mark as not practiced' : 'Mark as practiced'">
-          <mat-icon>{{ q.isPracticed ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
-          {{ q.isPracticed ? 'Practiced' : 'Mark practiced' }}
-        </button>
-        <a mat-stroked-button [routerLink]="['/questions', q.id, 'edit']">
-          <mat-icon>edit</mat-icon> Edit
+    <div class="glass-card">
+
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+        <a mat-icon-button routerLink="/questions" style="color:var(--text-secondary);">
+          <mat-icon>arrow_back</mat-icon>
         </a>
-        <button mat-stroked-button color="warn" (click)="confirmDelete()">
-          <mat-icon>delete</mat-icon> Delete
-        </button>
-      </div>
-    </div>
-
-    <mat-card>
-      <mat-card-content>
-        <div class="meta-row">
-          <app-difficulty-badge [difficulty]="q.difficulty" />
-          <span class="topic-label">{{ q.topicName }}</span>
-          @if (q.practiceCount > 0) {
-            <span class="practice-count">Practiced {{ q.practiceCount }}×</span>
-          }
-          @if (q.source) {
-            <span class="source">Source: {{ q.source }}</span>
-          }
+        <span class="tag" [class]="['','tag-easy','tag-medium','tag-hard'][q.difficulty]">
+          {{ ['','Easy','Medium','Hard'][q.difficulty] }}
+        </span>
+        <span style="font-size:13px;color:var(--text-muted);background:var(--bg-elevated);
+                     border:1px solid var(--border);border-radius:20px;padding:3px 12px;">
+          {{ q.topicName }}
+        </span>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-ghost" style="padding:8px 16px;font-size:13px;" (click)="togglePracticed()">
+            <mat-icon style="font-size:18px;width:18px;height:18px;">
+              {{ q.isPracticed ? 'check_circle' : 'radio_button_unchecked' }}
+            </mat-icon>
+            {{ q.isPracticed ? 'Practiced' : 'Mark practiced' }}
+          </button>
+          <a class="btn-ghost" [routerLink]="['/questions', q.id, 'edit']" style="padding:8px 16px;font-size:13px;">
+            <mat-icon style="font-size:18px;width:18px;height:18px;">edit</mat-icon> Edit
+          </a>
+          <button (click)="confirmDelete()"
+                  style="display:flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;
+                         background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
+                         border-radius:10px;color:var(--danger);cursor:pointer;font-family:inherit;">
+            <mat-icon style="font-size:18px;width:18px;height:18px;">delete</mat-icon> Delete
+          </button>
         </div>
+      </div>
 
-        <h2 class="question-text">{{ q.text }}</h2>
+      <h2 style="font-size:22px;font-weight:600;line-height:1.6;color:var(--text-primary);margin:0 0 24px;">
+        {{ q.text }}
+      </h2>
 
-        @if (q.expectedAnswer) {
-          <mat-divider />
-          <h3>Expected answer</h3>
-          <pre class="answer-text">{{ q.expectedAnswer }}</pre>
+      @if (q.expectedAnswer) {
+        <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;">
+          <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;
+                    letter-spacing:0.5px;margin:0 0 12px;">Expected answer</p>
+          <pre class="code-block">{{ q.expectedAnswer }}</pre>
+        </div>
+      }
+
+      @if (q.personalNotes) {
+        <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;">
+          <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;
+                    letter-spacing:0.5px;margin:0 0 12px;">Personal notes</p>
+          <pre class="notes-block">{{ q.personalNotes }}</pre>
+        </div>
+      }
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;display:flex;gap:16px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:var(--text-muted);">Added {{ q.createdAt | date:'mediumDate' }}</span>
+        @if (q.practiceCount > 0) {
+          <span style="font-size:12px;color:var(--text-muted);">Practiced {{ q.practiceCount }}×</span>
         }
-
-        @if (q.personalNotes) {
-          <mat-divider />
-          <h3>Personal notes</h3>
-          <p class="notes-text">{{ q.personalNotes }}</p>
+        @if (q.lastPracticedAt) {
+          <span style="font-size:12px;color:var(--text-muted);">Last practiced {{ q.lastPracticedAt | date:'mediumDate' }}</span>
         }
+        @if (q.source) {
+          <span style="font-size:12px;color:var(--text-muted);">Source: {{ q.source }}</span>
+        }
+      </div>
 
-        <mat-divider />
-        <p class="timestamps">
-          Added {{ q.createdAt | date:'mediumDate' }}
-          @if (q.lastPracticedAt) {
-            · Last practiced {{ q.lastPracticedAt | date:'mediumDate' }}
-          }
-        </p>
-      </mat-card-content>
-    </mat-card>
+    </div>
   }
 
 </div>

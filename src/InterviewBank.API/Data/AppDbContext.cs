@@ -12,7 +12,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<Question>             Questions             => Set<Question>();
     public DbSet<MockInterviewSession> MockInterviewSessions => Set<MockInterviewSession>();
     public DbSet<SessionQuestion>      SessionQuestions      => Set<SessionQuestion>();
-    public DbSet<RefreshToken>         RefreshTokens         => Set<RefreshToken>();  // Phase 2
+    public DbSet<RefreshToken>         RefreshTokens         => Set<RefreshToken>();
+    public DbSet<LibraryQuestion>      LibraryQuestions      => Set<LibraryQuestion>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -46,6 +47,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasIndex(q => q.Difficulty);
             e.HasIndex(q => q.IsPracticed);
             e.HasIndex(q => new { q.UserId, q.TopicId });
+            e.HasIndex(q => q.NextReviewAt);
+            e.Property(q => q.EaseFactor).HasDefaultValue(2.5);
         });
 
         // ── MockInterviewSession ──────────────────────────────────────────────
@@ -73,6 +76,17 @@ public class AppDbContext : IdentityDbContext<AppUser>
              .WithMany()
              .HasForeignKey(sq => sq.QuestionId)
              .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ── LibraryQuestion ───────────────────────────────────────────────────
+        builder.Entity<LibraryQuestion>(e =>
+        {
+            e.HasKey(q => q.Id);
+            e.Property(q => q.Text).HasMaxLength(1000).IsRequired();
+            e.Property(q => q.TopicName).HasMaxLength(100).IsRequired();
+            e.Property(q => q.Difficulty).HasConversion<int>();
+            e.HasIndex(q => q.TopicName);
+            e.HasIndex(q => q.Difficulty);
         });
 
         // ── RefreshToken ──────────────────────────────────────────────────────

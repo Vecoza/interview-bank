@@ -34,6 +34,7 @@ export class SessionSetupComponent implements OnInit {
   error           = signal<string | null>(null);
   selectedTopics  = signal<string[]>([]);
   selectedDiffs   = signal<number[]>([]);
+  dueCount        = signal(0);
 
   form = this.fb.nonNullable.group({
     questionCount:   [10,  Validators.required],
@@ -43,10 +44,11 @@ export class SessionSetupComponent implements OnInit {
 
   readonly questionCountOptions  = [5, 10, 15, 20];
   readonly timeOptions           = [30, 60, 90, 120, 180];
-  readonly strategyOptions       = [
+  readonly strategyOptions = [
     { value: 0, label: 'Random' },
     { value: 1, label: 'Least recently practiced' },
-    { value: 2, label: 'Hardest first' }
+    { value: 2, label: 'Hardest first' },
+    { value: 3, label: 'Due for review (spaced repetition)' }
   ];
   readonly difficulties = [
     { value: 1, label: 'Easy' },
@@ -56,6 +58,12 @@ export class SessionSetupComponent implements OnInit {
 
   ngOnInit() {
     this.ts.load().subscribe();
+    this.mis.getDueCount().subscribe(r => this.dueCount.set(r.count));
+  }
+
+  startDueReview() {
+    this.form.controls.strategy.setValue(3);
+    this.start();
   }
 
   toggleTopic(id: string) {

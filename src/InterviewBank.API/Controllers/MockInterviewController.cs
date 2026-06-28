@@ -106,6 +106,20 @@ public class MockInterviewController : ControllerBase
         return Ok(summary);
     }
 
+    [HttpGet("due-count")]
+    public async Task<IActionResult> GetDueCount()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var now    = DateTimeOffset.UtcNow;
+
+        var count = await _db.Questions
+            .Where(q => q.UserId == userId &&
+                        (q.NextReviewAt == null || q.NextReviewAt <= now))
+            .CountAsync();
+
+        return Ok(new { count });
+    }
+
     [HttpGet("sessions")]
     public async Task<IActionResult> GetSessions()
     {

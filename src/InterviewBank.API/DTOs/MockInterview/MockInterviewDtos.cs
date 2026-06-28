@@ -4,15 +4,16 @@ namespace InterviewBank.API.DTOs.MockInterview;
 
 public enum SelectionStrategy
 {
-    Random = 0,
+    Random                 = 0,
     LeastRecentlyPracticed = 1,
-    HardestFirst = 2
+    HardestFirst           = 2,
+    DueForReview           = 3
 }
 
 public class StartSessionDto
 {
     [Required]
-    [Range(5, 20)]
+    [Range(1, 50)]
     public int QuestionCount { get; set; }
 
     public List<Guid>? TopicIds { get; set; }

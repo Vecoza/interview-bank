@@ -1,0 +1,73 @@
+name: UI — Build & Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "interview-bank-ui/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "interview-bank-ui/**"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: interview-bank-ui/package-lock.json
+
+      - name: Install dependencies
+        working-directory: interview-bank-ui
+        run: npm ci
+
+      - name: Build
+        working-directory: interview-bank-ui
+        run: npm run build -- --configuration production
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: interview-bank-ui/package-lock.json
+
+      - name: Install dependencies
+        working-directory: interview-bank-ui
+        run: npm ci
+
+      - name: Build
+        working-directory: interview-bank-ui
+        run: npm run build -- --configuration production
+        env:
+          NODE_OPTIONS: "--max_old_space_size=4096"
+
+      - name: Deploy to Vercel
+        working-directory: interview-bank-ui
+        run: |
+          npm install -g vercel
+          vercel --prod --token=${{ secrets.VERCEL_TOKEN }} \
+                 --yes \
+                 --build-env NODE_OPTIONS="--max_old_space_size=4096"
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

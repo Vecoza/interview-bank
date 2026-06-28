@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { MockInterviewService, SessionQuestion, SubmitAnswer } from '../../../core/services/mock-interview.service';
 import { CountdownTimerComponent } from '../../../shared/components/countdown-timer/countdown-timer.component';
@@ -20,7 +21,7 @@ import { DifficultyBadgeComponent } from '../../../shared/components/difficulty-
   imports: [
     CommonModule, FormsModule,
     MatButtonModule, MatInputModule, MatFormFieldModule,
-    MatProgressBarModule, MatCardModule, MatIconModule,
+    MatProgressBarModule, MatCardModule, MatIconModule, MatProgressSpinnerModule,
     CountdownTimerComponent, DifficultyBadgeComponent
   ],
   templateUrl: './session-active.component.html'

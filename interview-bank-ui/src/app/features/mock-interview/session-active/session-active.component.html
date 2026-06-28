@@ -1,83 +1,121 @@
-<div class="active-session-page">
+@if (session(); as s) {
 
-  @if (session(); as s) {
-    <div class="session-header">
-      <mat-progress-bar mode="determinate" [value]="progressPct()" />
-      <span class="progress-label">
-        {{ currentIndex() + 1 }} / {{ s.questions.length }}
-      </span>
+  <div style="position:fixed;top:0;left:0;right:0;z-index:10;
+              background:var(--bg-elevated);border-bottom:1px solid var(--border);
+              padding:12px 24px;display:flex;align-items:center;gap:16px;">
+    <span style="font-size:13px;font-weight:600;color:var(--text-secondary);white-space:nowrap;">
+      {{ currentIndex() + 1 }} / {{ s.questions.length }}
+    </span>
+    <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+      <div style="height:100%;background:var(--accent);border-radius:2px;transition:width 0.4s;"
+           [style.width.%]="progressPct()"></div>
     </div>
+  </div>
+
+  <div style="min-height:100vh;padding:80px 24px 40px;display:flex;flex-direction:column;
+              align-items:center;gap:32px;max-width:720px;margin:0 auto;">
 
     @if (currentQuestion(); as q) {
-      <div class="question-area">
-        <div class="question-meta">
-          <app-difficulty-badge [difficulty]="q.difficulty" />
-          <span class="topic">{{ q.topicName }}</span>
+
+      <div style="display:flex;align-items:center;gap:10px;align-self:flex-start;flex-wrap:wrap;">
+        <span class="tag" [class]="['','tag-easy','tag-medium','tag-hard'][q.difficulty]">
+          {{ ['','Easy','Medium','Hard'][q.difficulty] }}
+        </span>
+        <span style="font-size:13px;color:var(--text-muted);background:var(--bg-elevated);
+                     border:1px solid var(--border);border-radius:20px;padding:3px 12px;">
+          {{ q.topicName }}
+        </span>
+      </div>
+
+      <h2 style="font-size:22px;font-weight:600;line-height:1.7;color:var(--text-primary);
+                 text-align:center;margin:0;align-self:stretch;">
+        {{ q.text }}
+      </h2>
+
+      @if (!isRevealed()) {
+        <app-countdown-timer [timeRemaining]="timeRemaining()" [totalTime]="s.timePerQuestion" />
+
+        <mat-form-field appearance="outline" style="width:100%;">
+          <mat-label>Your answer (optional)</mat-label>
+          <textarea matInput rows="6"
+                    [value]="userAnswer()"
+                    (input)="userAnswer.set($any($event.target).value)"
+                    placeholder="Type your answer here…"></textarea>
+        </mat-form-field>
+
+        <button class="btn-primary" style="width:100%;height:48px;font-size:15px;justify-content:center;"
+                (click)="revealAnswer()">
+          <mat-icon>visibility</mat-icon> Reveal answer
+        </button>
+      }
+
+      @if (isRevealed()) {
+
+        @if (userAnswer()) {
+          <div style="width:100%;">
+            <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;
+                      letter-spacing:0.5px;margin:0 0 10px;">Your answer</p>
+            <pre class="notes-block">{{ userAnswer() }}</pre>
+          </div>
+        }
+
+        <div style="width:100%;">
+          <p style="font-size:14px;color:var(--text-secondary);text-align:center;margin:0 0 16px;">
+            How did you do?
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <button class="assess-btn got-it" [class.selected]="selfAssessment() === 1" (click)="rate(1)">
+              <mat-icon>check_circle</mat-icon>
+              <span>Got it</span>
+            </button>
+            <button class="assess-btn partial" [class.selected]="selfAssessment() === 2" (click)="rate(2)">
+              <mat-icon>remove_circle</mat-icon>
+              <span>Partially</span>
+            </button>
+            <button class="assess-btn missed" [class.selected]="selfAssessment() === 3" (click)="rate(3)">
+              <mat-icon>cancel</mat-icon>
+              <span>Missed it</span>
+            </button>
+          </div>
         </div>
 
-        <h2 class="question-text">{{ q.text }}</h2>
+        <button class="btn-primary" [disabled]="selfAssessment() === null || submitting()"
+                style="width:100%;height:48px;font-size:15px;justify-content:center;"
+                (click)="next()">
+          @if (submitting()) {
+            <mat-spinner diameter="20" />
+          } @else if (currentIndex() + 1 >= s.questions.length) {
+            <mat-icon>flag</mat-icon> Finish session
+          } @else {
+            <mat-icon>arrow_forward</mat-icon> Next question
+          }
+        </button>
 
-        @if (!isRevealed()) {
-          <div class="timer-and-answer">
-            <app-countdown-timer
-              [timeRemaining]="timeRemaining()"
-              [totalTime]="s.timePerQuestion" />
-
-            <mat-form-field appearance="outline" class="answer-field">
-              <mat-label>Your answer</mat-label>
-              <textarea matInput rows="6"
-                        [value]="userAnswer()"
-                        (input)="userAnswer.set($any($event.target).value)"
-                        placeholder="Type your answer here…"></textarea>
-            </mat-form-field>
-
-            <button mat-flat-button color="primary" (click)="revealAnswer()">
-              Submit answer
-            </button>
-          </div>
-        }
-
-        @if (isRevealed()) {
-          <div class="reveal-area">
-            @if (currentQuestion()?.text) {
-              <div class="expected-answer-box">
-                <h3>Model answer</h3>
-                <pre class="expected-answer">{{ q.text }}</pre>
-              </div>
-            }
-
-            <div class="self-assessment">
-              <p>How did you do?</p>
-              <div class="assessment-buttons">
-                @for (opt of assessmentOptions; track opt.value) {
-                  <button
-                    mat-flat-button
-                    [color]="opt.color"
-                    [class.selected]="selfAssessment() === opt.value"
-                    (click)="rate(opt.value)">
-                    {{ opt.label }}
-                  </button>
-                }
-              </div>
-            </div>
-
-            <button
-              mat-flat-button
-              color="primary"
-              [disabled]="selfAssessment() === null || submitting()"
-              (click)="next()">
-              @if (submitting()) {
-                Saving…
-              } @else if (currentIndex() + 1 >= s.questions.length) {
-                Finish session
-              } @else {
-                Next question
-              }
-            </button>
-          </div>
-        }
-      </div>
+      }
     }
-  }
+  </div>
 
-</div>
+}
+
+<style>
+.assess-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.assess-btn mat-icon { font-size: 24px; width: 24px; height: 24px; }
+.assess-btn:hover { border-color: var(--text-muted); }
+.assess-btn.got-it.selected  { border-color: var(--success); background: rgba(34,197,94,0.1);  color: var(--success); }
+.assess-btn.partial.selected { border-color: var(--warning); background: rgba(245,158,11,0.1); color: var(--warning); }
+.assess-btn.missed.selected  { border-color: var(--danger);  background: rgba(239,68,68,0.1);  color: var(--danger);  }
+</style>
