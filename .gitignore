@@ -4,8 +4,9 @@ obj/
 *.suo
 .vs/
 *.userprefs
-appsettings.*.json
-!appsettings.json
+**/appsettings.json
+**/appsettings.*.json
+!**/appsettings.example.json
 secrets.json
 TestResults/
 *.nupkg

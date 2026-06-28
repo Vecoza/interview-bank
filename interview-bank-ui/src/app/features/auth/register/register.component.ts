@@ -1,0 +1,68 @@
+import { Component, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AuthService } from '../../../core/services/auth.service';
+
+function passwordsMatch(control: AbstractControl): ValidationErrors | null {
+  const password = control.get('password')?.value;
+  const confirm  = control.get('confirmPassword')?.value;
+  return password === confirm ? null : { passwordMismatch: true };
+}
+
+@Component({
+  selector: 'app-register',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatProgressSpinnerModule
+  ],
+  templateUrl: './register.component.html'
+})
+export class RegisterComponent {
+  form = this.fb.nonNullable.group(
+    {
+      email:           ['', [Validators.required, Validators.email]],
+      password:        ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', Validators.required]
+    },
+    { validators: passwordsMatch }
+  );
+
+  loading = signal(false);
+  error   = signal<string | null>(null);
+
+  constructor(
+    private fb:     FormBuilder,
+    private auth:   AuthService,
+    private router: Router
+  ) {}
+
+  submit(): void {
+    if (this.form.invalid) return;
+
+    const { email, password } = this.form.getRawValue();
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.auth.register(email, password).subscribe({
+      next:  ()  => this.router.navigate(['/questions']),
+      error: err => {
+        const msgs: string[] = err.error?.errors ?? [];
+        this.error.set(msgs.length ? msgs.join(' ') : 'Registration failed. Please try again.');
+        this.loading.set(false);
+      }
+    });
+  }
+}

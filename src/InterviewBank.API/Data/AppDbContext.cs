@@ -12,11 +12,13 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<Question>             Questions             => Set<Question>();
     public DbSet<MockInterviewSession> MockInterviewSessions => Set<MockInterviewSession>();
     public DbSet<SessionQuestion>      SessionQuestions      => Set<SessionQuestion>();
+    public DbSet<RefreshToken>         RefreshTokens         => Set<RefreshToken>();  // Phase 2
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
+        // ── Topic ────────────────────────────────────────────────────────────
         builder.Entity<Topic>(e =>
         {
             e.HasKey(t => t.Id);
@@ -25,6 +27,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasIndex(t => t.Name).IsUnique();
         });
 
+        // ── Question ─────────────────────────────────────────────────────────
         builder.Entity<Question>(e =>
         {
             e.HasKey(q => q.Id);
@@ -45,15 +48,16 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasIndex(q => new { q.UserId, q.TopicId });
         });
 
+        // ── MockInterviewSession ──────────────────────────────────────────────
         builder.Entity<MockInterviewSession>(e =>
         {
             e.HasKey(s => s.Id);
             e.Property(s => s.Id).HasDefaultValueSql("gen_random_uuid()");
-
             e.HasIndex(s => s.UserId);
             e.HasIndex(s => s.CompletedAt);
         });
 
+        // ── SessionQuestion ───────────────────────────────────────────────────
         builder.Entity<SessionQuestion>(e =>
         {
             e.HasKey(sq => sq.Id);
@@ -69,6 +73,25 @@ public class AppDbContext : IdentityDbContext<AppUser>
              .WithMany()
              .HasForeignKey(sq => sq.QuestionId)
              .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ── RefreshToken ──────────────────────────────────────────────────────
+        builder.Entity<RefreshToken>(e =>
+        {
+            e.HasKey(t => t.Id);
+            e.Property(t => t.Id).HasDefaultValueSql("gen_random_uuid()");
+            e.Property(t => t.Token).HasMaxLength(256).IsRequired();
+            e.HasIndex(t => t.Token).IsUnique();
+
+            e.HasOne(t => t.User)
+             .WithMany()
+             .HasForeignKey(t => t.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            // Computed properties must be ignored — they are not mapped columns
+            e.Ignore(t => t.IsExpired);
+            e.Ignore(t => t.IsRevoked);
+            e.Ignore(t => t.IsActive);
         });
     }
 }
