@@ -1,6 +1,5 @@
 <div class="question-list-page">
 
-  <!-- ── Header ──────────────────────────────────────────────────────────── -->
   <div class="page-header">
     <h1>Question Bank</h1>
     <a mat-flat-button color="primary" routerLink="/questions/new">
@@ -8,7 +7,6 @@
     </a>
   </div>
 
-  <!-- ── Search ──────────────────────────────────────────────────────────── -->
   <mat-form-field appearance="outline" class="search-field">
     <mat-label>Search questions</mat-label>
     <mat-icon matPrefix>search</mat-icon>
@@ -18,56 +16,51 @@
            placeholder="Type to search…" />
   </mat-form-field>
 
-  <!-- ── Topic chips ─────────────────────────────────────────────────────── -->
   <div class="filter-row">
     <span class="filter-label">Topic</span>
-    <mat-chip-set>
+    <mat-chip-listbox multiple>
       @for (topic of topics(); track topic.id) {
-        <mat-chip
+        <mat-chip-option
           [selected]="selectedTopicIds().includes(topic.id)"
           (click)="toggleTopic(topic.id)">
           {{ topic.name }}
           <span class="chip-count">{{ topic.questionCount }}</span>
-        </mat-chip>
+        </mat-chip-option>
       }
-    </mat-chip-set>
+    </mat-chip-listbox>
   </div>
 
-  <!-- ── Difficulty chips ────────────────────────────────────────────────── -->
   <div class="filter-row">
     <span class="filter-label">Difficulty</span>
-    <mat-chip-set>
+    <mat-chip-listbox multiple>
       @for (d of difficulties; track d.value) {
-        <mat-chip
+        <mat-chip-option
           [selected]="selectedDiffs().includes(d.value)"
           (click)="toggleDifficulty(d.value)">
           {{ d.label }}
-        </mat-chip>
+        </mat-chip-option>
       }
-    </mat-chip-set>
+    </mat-chip-listbox>
   </div>
 
-  <!-- ── Practiced toggle ────────────────────────────────────────────────── -->
   <div class="filter-row">
     <span class="filter-label">Practiced</span>
-    <mat-chip-set>
+    <mat-chip-listbox>
       @for (opt of ['all', 'yes', 'no']; track opt) {
-        <mat-chip
+        <mat-chip-option
           [selected]="practicedFilter() === opt"
           (click)="setPracticed($any(opt))">
           {{ opt === 'all' ? 'All' : opt === 'yes' ? 'Practiced' : 'Not practiced' }}
-        </mat-chip>
+        </mat-chip-option>
       }
-    </mat-chip-set>
+    </mat-chip-listbox>
     @if (selectedTopicIds().length || selectedDiffs().length || practicedFilter() !== 'all' || searchText()) {
       <button mat-button (click)="clearFilters()">Clear filters</button>
     }
   </div>
 
-  <!-- ── Progress bar ────────────────────────────────────────────────────── -->
   @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
 
-  <!-- ── Results ─────────────────────────────────────────────────────────── -->
   @if (!loading() && questions().length === 0) {
     <app-empty-state
       icon="quiz"
@@ -103,7 +96,6 @@
     </div>
   }
 
-  <!-- ── Paginator ───────────────────────────────────────────────────────── -->
   @if (total() > pageSize()) {
     <mat-paginator
       [length]="total()"

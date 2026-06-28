@@ -51,7 +51,16 @@ builder.Services.AddCors(opt => opt.AddDefaultPolicy(p =>
      .AllowAnyHeader()
      .AllowCredentials()));
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(opt =>
+{
+    opt.IdleTimeout   = TimeSpan.FromHours(2);
+    opt.Cookie.HttpOnly  = true;
+    opt.Cookie.IsEssential = true;
+});
+
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<MockInterviewService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -75,6 +84,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

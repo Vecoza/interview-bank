@@ -1,0 +1,57 @@
+<div class="summary-page">
+
+  @if (summary(); as s) {
+    <h1>Session complete</h1>
+
+    <div class="score-row">
+      <div class="score-circle">{{ scorePct() }}%</div>
+      <div class="score-stats">
+        <span class="got-it">✓ Got it: {{ s.gotItCount }}</span>
+        <span class="partial">~ Partial: {{ s.partialCount }}</span>
+        <span class="missed">✗ Missed: {{ s.missedCount }}</span>
+        <span class="avg-time">Avg time: {{ s.averageTimeTaken | number:'1.0-0' }}s</span>
+      </div>
+    </div>
+
+    <mat-divider />
+
+    <h2>Question breakdown</h2>
+
+    @for (result of s.results; track result.questionOrder) {
+      <mat-card class="result-card">
+        <mat-card-content>
+          <div class="result-meta">
+            <span class="order">Q{{ result.questionOrder }}</span>
+            <app-difficulty-badge [difficulty]="result.difficulty" />
+            <span class="topic">{{ result.topicName }}</span>
+            <span class="time">{{ result.timeTakenSeconds }}s</span>
+            <span [class]="'assessment-label assessment-' + result.selfAssessment">
+              {{ assessmentLabel(result.selfAssessment) }}
+            </span>
+          </div>
+
+          <p class="result-question">{{ result.questionText }}</p>
+
+          @if (result.userAnswer) {
+            <p class="result-label">Your answer</p>
+            <pre class="result-text">{{ result.userAnswer }}</pre>
+          }
+
+          @if (result.expectedAnswer) {
+            <p class="result-label">Model answer</p>
+            <pre class="result-text model">{{ result.expectedAnswer }}</pre>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <div class="summary-actions">
+      <button mat-flat-button color="primary" (click)="startNew()">
+        Start new session
+      </button>
+      <a mat-stroked-button routerLink="/questions">Back to questions</a>
+      <a mat-stroked-button routerLink="/dashboard">View dashboard</a>
+    </div>
+  }
+
+</div>

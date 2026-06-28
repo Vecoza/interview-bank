@@ -20,12 +20,10 @@ public class TokenService
         _db     = db;
     }
 
-    // ── Access token (15 min, in-memory on client) ────────────────────────────
-
     public string GenerateAccessToken(AppUser user)
     {
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_config["JwtSecret"]!));
+            Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
 
         var claims = new[]
         {
@@ -42,8 +40,6 @@ public class TokenService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-
-    // ── Refresh token (7 days, HttpOnly cookie on client) ────────────────────
 
     public async Task<RefreshToken> CreateRefreshTokenAsync(string userId)
     {
@@ -70,10 +66,6 @@ public class TokenService
                 t.ExpiresAt    >  DateTimeOffset.UtcNow);
     }
 
-    /// <summary>
-    /// Rotates the refresh token: revokes the old one, issues a new one.
-    /// Returns both new tokens so the controller can write the cookie and JSON.
-    /// </summary>
     public async Task<(string accessToken, RefreshToken refreshToken)>
         RotateTokensAsync(RefreshToken oldToken)
     {
@@ -85,7 +77,6 @@ public class TokenService
         return (accessJwt, newRt);
     }
 
-    /// <summary>Revokes all active refresh tokens for a user (logout).</summary>
     public async Task RevokeAllForUserAsync(string userId)
     {
         var active = await _db.RefreshTokens

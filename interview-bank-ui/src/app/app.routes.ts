@@ -52,6 +52,21 @@ export const routes: Routes = [
         .then(m => m.SessionSetupComponent)
   },
   {
+    path: 'mock-interview/active',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/mock-interview/session-active/session-active.component')
+        .then(m => m.SessionActiveComponent)
+  },
+  {
+    path: 'mock-interview/summary',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/mock-interview/session-summary/session-summary.component')
+        .then(m => m.SessionSummaryComponent)
+  },
+
+  {
     path: 'dashboard',
     canActivate: [authGuard],
     loadComponent: () =>

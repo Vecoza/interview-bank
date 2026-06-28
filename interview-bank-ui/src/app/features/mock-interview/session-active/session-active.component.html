@@ -1,0 +1,83 @@
+<div class="active-session-page">
+
+  @if (session(); as s) {
+    <div class="session-header">
+      <mat-progress-bar mode="determinate" [value]="progressPct()" />
+      <span class="progress-label">
+        {{ currentIndex() + 1 }} / {{ s.questions.length }}
+      </span>
+    </div>
+
+    @if (currentQuestion(); as q) {
+      <div class="question-area">
+        <div class="question-meta">
+          <app-difficulty-badge [difficulty]="q.difficulty" />
+          <span class="topic">{{ q.topicName }}</span>
+        </div>
+
+        <h2 class="question-text">{{ q.text }}</h2>
+
+        @if (!isRevealed()) {
+          <div class="timer-and-answer">
+            <app-countdown-timer
+              [timeRemaining]="timeRemaining()"
+              [totalTime]="s.timePerQuestion" />
+
+            <mat-form-field appearance="outline" class="answer-field">
+              <mat-label>Your answer</mat-label>
+              <textarea matInput rows="6"
+                        [value]="userAnswer()"
+                        (input)="userAnswer.set($any($event.target).value)"
+                        placeholder="Type your answer here…"></textarea>
+            </mat-form-field>
+
+            <button mat-flat-button color="primary" (click)="revealAnswer()">
+              Submit answer
+            </button>
+          </div>
+        }
+
+        @if (isRevealed()) {
+          <div class="reveal-area">
+            @if (currentQuestion()?.text) {
+              <div class="expected-answer-box">
+                <h3>Model answer</h3>
+                <pre class="expected-answer">{{ q.text }}</pre>
+              </div>
+            }
+
+            <div class="self-assessment">
+              <p>How did you do?</p>
+              <div class="assessment-buttons">
+                @for (opt of assessmentOptions; track opt.value) {
+                  <button
+                    mat-flat-button
+                    [color]="opt.color"
+                    [class.selected]="selfAssessment() === opt.value"
+                    (click)="rate(opt.value)">
+                    {{ opt.label }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <button
+              mat-flat-button
+              color="primary"
+              [disabled]="selfAssessment() === null || submitting()"
+              (click)="next()">
+              @if (submitting()) {
+                Saving…
+              } @else if (currentIndex() + 1 >= s.questions.length) {
+                Finish session
+              } @else {
+                Next question
+              }
+            </button>
+          </div>
+        }
+      </div>
+    }
+  }
+
+</div>
