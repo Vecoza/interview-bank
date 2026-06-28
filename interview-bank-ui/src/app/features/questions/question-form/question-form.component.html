@@ -1,0 +1,71 @@
+<div class="form-page">
+  <div class="page-header">
+    <a mat-icon-button routerLink="/questions"><mat-icon>arrow_back</mat-icon></a>
+    <h1>{{ isEdit() ? 'Edit question' : 'Add question' }}</h1>
+  </div>
+
+  @if (loading()) {
+    <mat-spinner diameter="40" />
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="question-form">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Question text</mat-label>
+        <textarea matInput formControlName="text" rows="3"
+                  placeholder="e.g. What is the difference between == and === in JavaScript?"></textarea>
+        @if (form.controls.text.hasError('required'))   { <mat-error>Question text is required</mat-error> }
+        @if (form.controls.text.hasError('maxlength'))  { <mat-error>Maximum 1 000 characters</mat-error>  }
+      </mat-form-field>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Topic</mat-label>
+          <mat-select formControlName="topicId">
+            @for (t of topics(); track t.id) {
+              <mat-option [value]="t.id">{{ t.name }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.topicId.hasError('required')) { <mat-error>Topic is required</mat-error> }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Difficulty</mat-label>
+          <mat-select formControlName="difficulty">
+            @for (d of difficultyOptions; track d.value) {
+              <mat-option [value]="d.value">{{ d.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Expected answer</mat-label>
+        <textarea matInput formControlName="expectedAnswer" rows="6"
+                  placeholder="Write the model answer here. Markdown is supported for code blocks."></textarea>
+        <mat-hint>Markdown supported — use ``` for code blocks</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Personal notes</mat-label>
+        <textarea matInput formControlName="personalNotes" rows="3"
+                  placeholder="What tripped you up, edge cases to remember, related concepts…"></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Source (optional)</mat-label>
+        <input matInput formControlName="source" placeholder="e.g. LeetCode #42, InterviewBit, Personal experience" />
+        @if (form.controls.source.hasError('maxlength')) { <mat-error>Maximum 500 characters</mat-error> }
+      </mat-form-field>
+
+      @if (error()) { <p class="form-error">{{ error() }}</p> }
+
+      <div class="form-actions">
+        <a mat-button routerLink="/questions">Cancel</a>
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+          @if (saving()) { <mat-spinner diameter="20" /> } @else { {{ isEdit() ? 'Save changes' : 'Add question' }} }
+        </button>
+      </div>
+
+    </form>
+  }
+</div>

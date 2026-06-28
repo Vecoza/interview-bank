@@ -4,7 +4,6 @@ import { authGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   { path: '', redirectTo: 'questions', pathMatch: 'full' },
 
-  // ── Public routes ───────────────────────────────────────────────────────────
   {
     path: 'login',
     loadComponent: () =>
@@ -16,15 +15,35 @@ export const routes: Routes = [
       import('./features/auth/register/register.component').then(m => m.RegisterComponent)
   },
 
-  // ── Protected routes — populated in Phase 3-5 ───────────────────────────────
   {
     path: 'questions',
     canActivate: [authGuard],
-    // loadChildren added in Phase 3
     loadComponent: () =>
       import('./features/questions/question-list/question-list.component')
         .then(m => m.QuestionListComponent)
   },
+  {
+    path: 'questions/new',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/questions/question-form/question-form.component')
+        .then(m => m.QuestionFormComponent)
+  },
+  {
+    path: 'questions/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/questions/question-detail/question-detail.component')
+        .then(m => m.QuestionDetailComponent)
+  },
+  {
+    path: 'questions/:id/edit',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/questions/question-form/question-form.component')
+        .then(m => m.QuestionFormComponent)
+  },
+
   {
     path: 'mock-interview',
     canActivate: [authGuard],

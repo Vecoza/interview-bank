@@ -16,7 +16,6 @@ export const authInterceptor: HttpInterceptorFn = (
 
   return next(authReq).pipe(
     catchError((err: HttpErrorResponse) => {
-      // Attempt a silent refresh on 401, then retry the original request once
       if (err.status === 401 && !req.url.includes('/api/auth/')) {
         return auth.refresh().pipe(
           switchMap(res => {

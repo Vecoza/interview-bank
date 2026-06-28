@@ -1,0 +1,63 @@
+<div class="detail-page">
+
+  @if (loading()) {
+    <mat-spinner diameter="40" />
+  }
+
+  @if (question(); as q) {
+    <div class="page-header">
+      <a mat-icon-button routerLink="/questions"><mat-icon>arrow_back</mat-icon></a>
+      <div class="header-actions">
+        <button mat-stroked-button (click)="togglePracticed()"
+                [matTooltip]="q.isPracticed ? 'Mark as not practiced' : 'Mark as practiced'">
+          <mat-icon>{{ q.isPracticed ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+          {{ q.isPracticed ? 'Practiced' : 'Mark practiced' }}
+        </button>
+        <a mat-stroked-button [routerLink]="['/questions', q.id, 'edit']">
+          <mat-icon>edit</mat-icon> Edit
+        </a>
+        <button mat-stroked-button color="warn" (click)="confirmDelete()">
+          <mat-icon>delete</mat-icon> Delete
+        </button>
+      </div>
+    </div>
+
+    <mat-card>
+      <mat-card-content>
+        <div class="meta-row">
+          <app-difficulty-badge [difficulty]="q.difficulty" />
+          <span class="topic-label">{{ q.topicName }}</span>
+          @if (q.practiceCount > 0) {
+            <span class="practice-count">Practiced {{ q.practiceCount }}×</span>
+          }
+          @if (q.source) {
+            <span class="source">Source: {{ q.source }}</span>
+          }
+        </div>
+
+        <h2 class="question-text">{{ q.text }}</h2>
+
+        @if (q.expectedAnswer) {
+          <mat-divider />
+          <h3>Expected answer</h3>
+          <pre class="answer-text">{{ q.expectedAnswer }}</pre>
+        }
+
+        @if (q.personalNotes) {
+          <mat-divider />
+          <h3>Personal notes</h3>
+          <p class="notes-text">{{ q.personalNotes }}</p>
+        }
+
+        <mat-divider />
+        <p class="timestamps">
+          Added {{ q.createdAt | date:'mediumDate' }}
+          @if (q.lastPracticedAt) {
+            · Last practiced {{ q.lastPracticedAt | date:'mediumDate' }}
+          }
+        </p>
+      </mat-card-content>
+    </mat-card>
+  }
+
+</div>

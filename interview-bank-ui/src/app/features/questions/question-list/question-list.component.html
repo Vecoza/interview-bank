@@ -1,0 +1,116 @@
+<div class="question-list-page">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <h1>Question Bank</h1>
+    <a mat-flat-button color="primary" routerLink="/questions/new">
+      <mat-icon>add</mat-icon> Add question
+    </a>
+  </div>
+
+  <!-- ── Search ──────────────────────────────────────────────────────────── -->
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>Search questions</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput
+           [value]="searchText()"
+           (input)="onSearchInput($any($event.target).value)"
+           placeholder="Type to search…" />
+  </mat-form-field>
+
+  <!-- ── Topic chips ─────────────────────────────────────────────────────── -->
+  <div class="filter-row">
+    <span class="filter-label">Topic</span>
+    <mat-chip-set>
+      @for (topic of topics(); track topic.id) {
+        <mat-chip
+          [selected]="selectedTopicIds().includes(topic.id)"
+          (click)="toggleTopic(topic.id)">
+          {{ topic.name }}
+          <span class="chip-count">{{ topic.questionCount }}</span>
+        </mat-chip>
+      }
+    </mat-chip-set>
+  </div>
+
+  <!-- ── Difficulty chips ────────────────────────────────────────────────── -->
+  <div class="filter-row">
+    <span class="filter-label">Difficulty</span>
+    <mat-chip-set>
+      @for (d of difficulties; track d.value) {
+        <mat-chip
+          [selected]="selectedDiffs().includes(d.value)"
+          (click)="toggleDifficulty(d.value)">
+          {{ d.label }}
+        </mat-chip>
+      }
+    </mat-chip-set>
+  </div>
+
+  <!-- ── Practiced toggle ────────────────────────────────────────────────── -->
+  <div class="filter-row">
+    <span class="filter-label">Practiced</span>
+    <mat-chip-set>
+      @for (opt of ['all', 'yes', 'no']; track opt) {
+        <mat-chip
+          [selected]="practicedFilter() === opt"
+          (click)="setPracticed($any(opt))">
+          {{ opt === 'all' ? 'All' : opt === 'yes' ? 'Practiced' : 'Not practiced' }}
+        </mat-chip>
+      }
+    </mat-chip-set>
+    @if (selectedTopicIds().length || selectedDiffs().length || practicedFilter() !== 'all' || searchText()) {
+      <button mat-button (click)="clearFilters()">Clear filters</button>
+    }
+  </div>
+
+  <!-- ── Progress bar ────────────────────────────────────────────────────── -->
+  @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
+
+  <!-- ── Results ─────────────────────────────────────────────────────────── -->
+  @if (!loading() && questions().length === 0) {
+    <app-empty-state
+      icon="quiz"
+      title="No questions found"
+      message="Try adjusting your filters, or add your first question."
+      actionLabel="Add question"
+      actionRoute="/questions/new" />
+  }
+
+  @for (q of questions(); track q.id) {
+    <div class="question-card">
+      <div class="question-card__body">
+        <p class="question-card__text">{{ q.text }}</p>
+        <div class="question-card__meta">
+          <app-difficulty-badge [difficulty]="q.difficulty" />
+          <span class="topic-chip">{{ q.topicName }}</span>
+          @if (q.isPracticed) { <span class="practiced-tag">✓ Practiced</span> }
+        </div>
+      </div>
+      <div class="question-card__actions">
+        <button mat-icon-button
+                [matTooltip]="q.isPracticed ? 'Mark as not practiced' : 'Mark as practiced'"
+                (click)="togglePracticed(q)">
+          <mat-icon>{{ q.isPracticed ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+        </button>
+        <a mat-icon-button matTooltip="View / edit" [routerLink]="['/questions', q.id]">
+          <mat-icon>edit</mat-icon>
+        </a>
+        <button mat-icon-button color="warn" matTooltip="Delete" (click)="confirmDelete(q)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Paginator ───────────────────────────────────────────────────────── -->
+  @if (total() > pageSize()) {
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="pageSize()"
+      [pageIndex]="page() - 1"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPage($event)" />
+  }
+
+</div>

@@ -14,12 +14,10 @@ export interface AuthResponse {
 export class AuthService {
   private readonly api = `${environment.apiUrl}/api/auth`;
 
-  // Access token lives in memory only — never written to localStorage
   private _accessToken = signal<string | null>(null);
   private _email       = signal<string | null>(null);
   private _userId      = signal<string | null>(null);
 
-  // Public read-only surface
   readonly isAuthenticated = computed(() => this._accessToken() !== null);
   readonly currentEmail    = this._email.asReadonly();
   readonly currentUserId   = this._userId.asReadonly();
@@ -52,10 +50,6 @@ export class AuthService {
       });
   }
 
-  /**
-   * Called by the auth interceptor when a 401 is received.
-   * Sends the HttpOnly refresh-token cookie to get a new access token.
-   */
   refresh() {
     return this.http
       .post<AuthResponse>(`${this.api}/refresh`, {}, { withCredentials: true })
