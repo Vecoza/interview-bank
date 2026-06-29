@@ -1,7 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { tap, catchError, EMPTY } from 'rxjs';
+import { tap, catchError, EMPTY, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface AuthResponse {
@@ -60,6 +60,15 @@ export class AuthService {
           this.router.navigate(['/login']);
           return EMPTY;
         })
+      );
+  }
+
+  tryRestore() {
+    return this.http
+      .post<AuthResponse>(`${this.api}/refresh`, {}, { withCredentials: true })
+      .pipe(
+        tap(res => this.setSession(res)),
+        catchError(() => of(null))
       );
   }
 

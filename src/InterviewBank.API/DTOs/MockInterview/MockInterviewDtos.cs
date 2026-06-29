@@ -30,11 +30,13 @@ public class StartSessionDto
 
 public class SessionQuestionDto
 {
-    public Guid   Id            { get; set; }
-    public string Text          { get; set; } = string.Empty;
-    public string TopicName     { get; set; } = string.Empty;
-    public int    Difficulty    { get; set; }
-    public int    QuestionOrder { get; set; }
+    public Guid    Id            { get; set; }
+    public string  Text          { get; set; } = string.Empty;
+    public string  TopicName     { get; set; } = string.Empty;
+    public int     Difficulty    { get; set; }
+    public int     QuestionOrder { get; set; }
+    public int     QuestionType  { get; set; }
+    public string? CorrectAnswer { get; set; }
 }
 
 public class SubmitAnswerDto

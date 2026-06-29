@@ -10,6 +10,7 @@ export interface Question {
   text: string;
   difficulty: number;
   difficultyLabel: string;
+  questionType: number;
   expectedAnswer: string | null;
   personalNotes: string | null;
   source: string | null;
@@ -40,6 +41,7 @@ export interface CreateQuestion {
   text: string;
   topicId: string;
   difficulty: number;
+  questionType?: number;
   expectedAnswer?: string;
   personalNotes?: string;
   source?: string;

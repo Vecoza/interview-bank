@@ -7,6 +7,12 @@ public enum Difficulty
     Hard   = 3
 }
 
+public enum QuestionType
+{
+    Essay = 0,
+    YesNo = 1
+}
+
 public class Question
 {
     public Guid Id { get; set; }
@@ -17,7 +23,9 @@ public class Question
 
     public string Text { get; set; } = string.Empty;
 
-    public Difficulty Difficulty { get; set; }
+    public Difficulty    Difficulty    { get; set; }
+
+    public QuestionType  QuestionType  { get; set; } = QuestionType.Essay;
 
     public string? ExpectedAnswer { get; set; }
 

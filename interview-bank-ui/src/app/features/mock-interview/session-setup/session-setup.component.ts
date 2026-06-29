@@ -12,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { MockInterviewService } from '../../../core/services/mock-interview.service';
 import { TopicService } from '../../../core/services/topic.service';
+import { LibraryService } from '../../../core/services/library.service';
 
 @Component({
   selector: 'app-session-setup',
@@ -27,6 +28,7 @@ export class SessionSetupComponent implements OnInit {
   private router  = inject(Router);
   private mis     = inject(MockInterviewService);
   private ts      = inject(TopicService);
+  private ls      = inject(LibraryService);
   private fb      = inject(FormBuilder);
 
   topics          = this.ts.topics;
@@ -35,6 +37,9 @@ export class SessionSetupComponent implements OnInit {
   selectedTopics  = signal<string[]>([]);
   selectedDiffs   = signal<number[]>([]);
   dueCount        = signal(0);
+
+  source              = signal<'bank' | 'library'>('bank');
+  selectedLibTopics   = signal<string[]>([]);
 
   form = this.fb.nonNullable.group({
     questionCount:   [10,  Validators.required],
@@ -55,13 +60,20 @@ export class SessionSetupComponent implements OnInit {
     { value: 2, label: 'Medium' },
     { value: 3, label: 'Hard' }
   ];
+  readonly libraryTopics = ['JavaScript', 'C#', 'SQL', 'Algorithms'];
 
   ngOnInit() {
     this.ts.load().subscribe();
     this.mis.getDueCount().subscribe(r => this.dueCount.set(r.count));
   }
 
+  setSource(s: 'bank' | 'library') {
+    this.source.set(s);
+    this.error.set(null);
+  }
+
   startDueReview() {
+    this.source.set('bank');
     this.form.controls.strategy.setValue(3);
     this.start();
   }
@@ -80,6 +92,13 @@ export class SessionSetupComponent implements OnInit {
     );
   }
 
+  toggleLibTopic(t: string) {
+    const curr = this.selectedLibTopics();
+    this.selectedLibTopics.set(
+      curr.includes(t) ? curr.filter(x => x !== t) : [...curr, t]
+    );
+  }
+
   start() {
     if (this.form.invalid) return;
 
@@ -87,6 +106,41 @@ export class SessionSetupComponent implements OnInit {
 
     this.starting.set(true);
     this.error.set(null);
+
+    if (this.source() === 'library') {
+      this.ls.getAll().subscribe({
+        next: questions => {
+          let filtered = questions;
+
+          const libTopics = this.selectedLibTopics();
+          if (libTopics.length) {
+            filtered = filtered.filter(q => libTopics.includes(q.topicName));
+          }
+
+          const diffs = this.selectedDiffs();
+          if (diffs.length) {
+            filtered = filtered.filter(q => diffs.includes(q.difficulty));
+          }
+
+          const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+          const picked = shuffled.slice(0, questionCount);
+
+          if (!picked.length) {
+            this.error.set('No library questions match the selected filters. Try different options.');
+            this.starting.set(false);
+            return;
+          }
+
+          this.mis.startLocalSession(picked, timePerQuestion);
+          this.router.navigate(['/mock-interview/active']);
+        },
+        error: () => {
+          this.error.set('Could not load library questions. Please try again.');
+          this.starting.set(false);
+        }
+      });
+      return;
+    }
 
     this.mis.start({
       questionCount,

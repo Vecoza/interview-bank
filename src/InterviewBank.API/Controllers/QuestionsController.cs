@@ -92,7 +92,10 @@ public class QuestionsController : ControllerBase
             TopicId        = dto.TopicId,
             Text           = dto.Text.Trim(),
             Difficulty     = (Difficulty)dto.Difficulty,
-            ExpectedAnswer = dto.ExpectedAnswer,
+            QuestionType   = (QuestionType)dto.QuestionType,
+            ExpectedAnswer = dto.QuestionType == (int)QuestionType.YesNo
+                ? NormaliseYesNo(dto.ExpectedAnswer)
+                : dto.ExpectedAnswer,
             PersonalNotes  = dto.PersonalNotes,
             Source         = dto.Source,
             CreatedAt      = DateTimeOffset.UtcNow,
@@ -127,7 +130,10 @@ public class QuestionsController : ControllerBase
         question.Text           = dto.Text.Trim();
         question.TopicId        = dto.TopicId;
         question.Difficulty     = (Difficulty)dto.Difficulty;
-        question.ExpectedAnswer = dto.ExpectedAnswer;
+        question.QuestionType   = (QuestionType)dto.QuestionType;
+        question.ExpectedAnswer = dto.QuestionType == (int)QuestionType.YesNo
+            ? NormaliseYesNo(dto.ExpectedAnswer)
+            : dto.ExpectedAnswer;
         question.PersonalNotes  = dto.PersonalNotes;
         question.Source         = dto.Source;
         question.UpdatedAt      = DateTimeOffset.UtcNow;
@@ -154,6 +160,14 @@ public class QuestionsController : ControllerBase
 
         return NoContent();
     }
+
+    private static string? NormaliseYesNo(string? raw) =>
+        raw?.Trim().ToLowerInvariant() switch
+        {
+            "yes" or "true"  or "1" => "Yes",
+            "no"  or "false" or "0" => "No",
+            _                       => raw
+        };
 
     // PATCH /api/questions/{id}/practiced
     [HttpPatch("{id:guid}/practiced")]

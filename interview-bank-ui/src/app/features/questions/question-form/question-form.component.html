@@ -44,12 +44,64 @@
         </mat-form-field>
       </div>
 
-      <mat-form-field appearance="outline" style="width:100%;">
-        <mat-label>Expected answer</mat-label>
-        <textarea matInput formControlName="expectedAnswer" rows="6"
-                  placeholder="Write the model answer here…"></textarea>
-        <mat-hint style="color:var(--text-muted);">Markdown supported</mat-hint>
-      </mat-form-field>
+      <div>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 10px;">Question type</p>
+        <div style="display:flex;gap:10px;">
+          <button type="button"
+                  [style.border-color]="!isYesNo ? 'var(--accent)' : 'var(--border)'"
+                  [style.background]="!isYesNo ? 'rgba(59,130,246,0.08)' : 'var(--bg-elevated)'"
+                  [style.color]="!isYesNo ? 'var(--accent)' : 'var(--text-secondary)'"
+                  style="padding:8px 18px;border-radius:10px;border:2px solid;font-family:inherit;
+                         font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;"
+                  (click)="form.controls.questionType.setValue(0)">
+            <mat-icon style="font-size:18px;width:18px;height:18px;">article</mat-icon> Essay
+          </button>
+          <button type="button"
+                  [style.border-color]="isYesNo ? 'var(--accent)' : 'var(--border)'"
+                  [style.background]="isYesNo ? 'rgba(59,130,246,0.08)' : 'var(--bg-elevated)'"
+                  [style.color]="isYesNo ? 'var(--accent)' : 'var(--text-secondary)'"
+                  style="padding:8px 18px;border-radius:10px;border:2px solid;font-family:inherit;
+                         font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;"
+                  (click)="form.controls.questionType.setValue(1)">
+            <mat-icon style="font-size:18px;width:18px;height:18px;">rule</mat-icon> Yes / No
+          </button>
+        </div>
+      </div>
+
+      @if (isYesNo) {
+        <div>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 10px;">Correct answer</p>
+          <div style="display:flex;gap:10px;">
+            <button type="button"
+                    [style.border-color]="form.controls.yesNoAnswer.value === 'Yes' ? 'var(--success)' : 'var(--border)'"
+                    [style.background]="form.controls.yesNoAnswer.value === 'Yes' ? 'rgba(34,197,94,0.08)' : 'var(--bg-elevated)'"
+                    [style.color]="form.controls.yesNoAnswer.value === 'Yes' ? 'var(--success)' : 'var(--text-secondary)'"
+                    style="padding:10px 24px;border-radius:10px;border:2px solid;font-family:inherit;
+                           font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;
+                           gap:6px;transition:all 0.15s;"
+                    (click)="form.controls.yesNoAnswer.setValue('Yes')">
+              <mat-icon style="font-size:20px;width:20px;height:20px;">thumb_up</mat-icon> Yes
+            </button>
+            <button type="button"
+                    [style.border-color]="form.controls.yesNoAnswer.value === 'No' ? 'var(--danger)' : 'var(--border)'"
+                    [style.background]="form.controls.yesNoAnswer.value === 'No' ? 'rgba(239,68,68,0.08)' : 'var(--bg-elevated)'"
+                    [style.color]="form.controls.yesNoAnswer.value === 'No' ? 'var(--danger)' : 'var(--text-secondary)'"
+                    style="padding:10px 24px;border-radius:10px;border:2px solid;font-family:inherit;
+                           font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;
+                           gap:6px;transition:all 0.15s;"
+                    (click)="form.controls.yesNoAnswer.setValue('No')">
+              <mat-icon style="font-size:20px;width:20px;height:20px;">thumb_down</mat-icon> No
+            </button>
+          </div>
+        </div>
+      } @else {
+        <mat-form-field appearance="outline" style="width:100%;">
+          <mat-label>Expected answer</mat-label>
+          <textarea matInput formControlName="expectedAnswer" rows="6"
+                    placeholder="Write the model answer here…"></textarea>
+          <mat-hint style="color:var(--text-muted);">Markdown supported</mat-hint>
+        </mat-form-field>
+      }
 
       <mat-form-field appearance="outline" style="width:100%;">
         <mat-label>Personal notes</mat-label>

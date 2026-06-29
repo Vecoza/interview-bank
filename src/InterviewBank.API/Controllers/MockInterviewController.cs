@@ -44,7 +44,9 @@ public class MockInterviewController : ControllerBase
                 Text          = q.Text,
                 TopicName     = q.Topic.Name,
                 Difficulty    = (int)q.Difficulty,
-                QuestionOrder = i + 1
+                QuestionOrder = i + 1,
+                QuestionType  = (int)q.QuestionType,
+                CorrectAnswer = q.QuestionType == Entities.QuestionType.YesNo ? q.ExpectedAnswer : null
             }).ToList()
         };
 

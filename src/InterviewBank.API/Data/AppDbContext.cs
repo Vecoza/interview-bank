@@ -36,6 +36,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.Property(q => q.Text).HasMaxLength(1000).IsRequired();
             e.Property(q => q.Source).HasMaxLength(500);
             e.Property(q => q.Difficulty).HasConversion<int>();
+            e.Property(q => q.QuestionType).HasConversion<int>().HasDefaultValue(QuestionType.Essay);
 
             e.HasOne(q => q.Topic)
              .WithMany(t => t.Questions)

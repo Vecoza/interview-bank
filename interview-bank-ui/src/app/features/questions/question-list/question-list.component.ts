@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -33,12 +33,13 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   templateUrl: './question-list.component.html'
 })
 export class QuestionListComponent implements OnInit {
-  private route   = inject(ActivatedRoute);
-  private router  = inject(Router);
-  private qs      = inject(QuestionService);
-  private ts      = inject(TopicService);
-  private dialog  = inject(MatDialog);
-  private search$ = new Subject<string>();
+  private route      = inject(ActivatedRoute);
+  private router     = inject(Router);
+  private qs         = inject(QuestionService);
+  private ts         = inject(TopicService);
+  private dialog     = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
+  private search$    = new Subject<string>();
 
   topics    = this.ts.topics;
   questions = signal<Question[]>([]);
@@ -55,7 +56,7 @@ export class QuestionListComponent implements OnInit {
   ngOnInit() {
     this.ts.load().subscribe();
 
-    this.route.queryParams.pipe(takeUntilDestroyed()).subscribe(params => {
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       this.searchText.set(params['search'] ?? '');
       this.selectedTopicIds.set(params['topics'] ? params['topics'].split(',') : []);
       this.selectedDiffs.set(params['difficulties'] ? params['difficulties'].split(',').map(Number) : []);
@@ -67,7 +68,7 @@ export class QuestionListComponent implements OnInit {
     this.search$.pipe(
       debounceTime(300),
       distinctUntilChanged(),
-      takeUntilDestroyed()
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe(text => {
       this.searchText.set(text);
       this.pushToUrl({ search: text || undefined, page: 1 });

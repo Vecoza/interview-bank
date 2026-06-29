@@ -28,6 +28,34 @@
   <form [formGroup]="form" (ngSubmit)="start()" novalidate
         style="display:flex;flex-direction:column;gap:20px;">
 
+    <!-- Question source -->
+    <div class="glass-card">
+      <h2 style="margin:0 0 16px;font-size:16px;font-weight:600;color:var(--text-primary);">
+        Question source
+      </h2>
+      <div class="chip-group" style="margin-bottom:0;">
+        <button type="button" class="filter-chip"
+                [class.selected]="source() === 'bank'"
+                (click)="setSource('bank')">
+          <mat-icon style="font-size:16px;width:16px;height:16px;vertical-align:middle;margin-right:4px;">account_box</mat-icon>
+          My bank
+        </button>
+        <button type="button" class="filter-chip"
+                [class.selected]="source() === 'library'"
+                (click)="setSource('library')">
+          <mat-icon style="font-size:16px;width:16px;height:16px;vertical-align:middle;margin-right:4px;">auto_stories</mat-icon>
+          Question library
+        </button>
+      </div>
+
+      @if (source() === 'library') {
+        <p style="font-size:13px;color:var(--text-muted);margin:12px 0 0;">
+          Questions are pulled directly from the curated library — no import needed.
+        </p>
+      }
+    </div>
+
+    <!-- Session config -->
     <div class="glass-card">
       <h2 style="margin:0 0 20px;font-size:16px;font-weight:600;color:var(--text-primary);">
         Session config
@@ -59,45 +87,83 @@
         </div>
       </div>
 
-      <mat-form-field appearance="outline" style="width:100%;">
-        <mat-label>Selection strategy</mat-label>
-        <mat-select formControlName="strategy">
-          @for (s of strategyOptions; track s.value) {
-            <mat-option [value]="s.value">{{ s.label }}</mat-option>
+      @if (source() === 'bank') {
+        <mat-form-field appearance="outline" style="width:100%;margin-bottom:0;">
+          <mat-label>Selection strategy</mat-label>
+          <mat-select formControlName="strategy">
+            @for (s of strategyOptions; track s.value) {
+              <mat-option [value]="s.value">{{ s.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    </div>
+
+    <!-- Filters for "My bank" source -->
+    @if (source() === 'bank') {
+      <div class="glass-card">
+        <h2 style="margin:0 0 16px;font-size:16px;font-weight:600;color:var(--text-primary);">
+          Filter by topic <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
+        </h2>
+        <div class="chip-group">
+          @for (topic of topics(); track topic.id) {
+            <button type="button" class="filter-chip"
+                    [class.selected]="selectedTopics().includes(topic.id)"
+                    (click)="toggleTopic(topic.id)">
+              {{ topic.name }}
+            </button>
           }
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    <div class="glass-card">
-      <h2 style="margin:0 0 16px;font-size:16px;font-weight:600;color:var(--text-primary);">
-        Filter by topic <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
-      </h2>
-      <div class="chip-group">
-        @for (topic of topics(); track topic.id) {
-          <button type="button" class="filter-chip"
-                  [class.selected]="selectedTopics().includes(topic.id)"
-                  (click)="toggleTopic(topic.id)">
-            {{ topic.name }}
-          </button>
-        }
+        </div>
       </div>
-    </div>
 
-    <div class="glass-card">
-      <h2 style="margin:0 0 16px;font-size:16px;font-weight:600;color:var(--text-primary);">
-        Filter by difficulty <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
-      </h2>
-      <div class="chip-group">
-        @for (d of difficulties; track d.value) {
-          <button type="button" class="filter-chip"
-                  [class.selected]="selectedDiffs().includes(d.value)"
-                  (click)="toggleDifficulty(d.value)">
-            {{ d.label }}
-          </button>
-        }
+      <div class="glass-card">
+        <h2 style="margin:0 0 16px;font-size:16px;font-weight:600;color:var(--text-primary);">
+          Filter by difficulty <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
+        </h2>
+        <div class="chip-group">
+          @for (d of difficulties; track d.value) {
+            <button type="button" class="filter-chip"
+                    [class.selected]="selectedDiffs().includes(d.value)"
+                    (click)="toggleDifficulty(d.value)">
+              {{ d.label }}
+            </button>
+          }
+        </div>
       </div>
-    </div>
+    }
+
+    <!-- Filters for "Library" source -->
+    @if (source() === 'library') {
+      <div class="glass-card">
+        <h2 style="margin:0 0 16px;font-size:16px;font-weight:600;color:var(--text-primary);">
+          Filter by topic <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
+        </h2>
+        <div class="chip-group">
+          @for (t of libraryTopics; track t) {
+            <button type="button" class="filter-chip"
+                    [class.selected]="selectedLibTopics().includes(t)"
+                    (click)="toggleLibTopic(t)">
+              {{ t }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h2 style="margin:0 0 16px;font-size:16px;font-weight:600;color:var(--text-primary);">
+          Filter by difficulty <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
+        </h2>
+        <div class="chip-group">
+          @for (d of difficulties; track d.value) {
+            <button type="button" class="filter-chip"
+                    [class.selected]="selectedDiffs().includes(d.value)"
+                    (click)="toggleDifficulty(d.value)">
+              {{ d.label }}
+            </button>
+          }
+        </div>
+      </div>
+    }
 
     @if (error()) {
       <p style="color:var(--danger);font-size:13px;text-align:center;margin:0;">{{ error() }}</p>

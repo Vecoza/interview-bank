@@ -61,6 +61,7 @@ builder.Services.AddSession(opt =>
 
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<MockInterviewService>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

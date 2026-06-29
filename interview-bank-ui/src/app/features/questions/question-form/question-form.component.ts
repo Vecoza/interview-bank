@@ -40,10 +40,14 @@ export class QuestionFormComponent implements OnInit {
     text:           ['', [Validators.required, Validators.maxLength(1000)]],
     topicId:        ['', Validators.required],
     difficulty:     [2, Validators.required],
+    questionType:   [0],
     expectedAnswer: [''],
+    yesNoAnswer:    ['Yes'],
     personalNotes:  [''],
     source:         ['', Validators.maxLength(500)]
   });
+
+  get isYesNo() { return this.form.controls.questionType.value === 1; }
 
   readonly difficultyOptions = [
     { value: 1, label: 'Easy' },
@@ -65,7 +69,9 @@ export class QuestionFormComponent implements OnInit {
             text:           q.text,
             topicId:        q.topicId,
             difficulty:     q.difficulty,
-            expectedAnswer: q.expectedAnswer ?? '',
+            questionType:   q.questionType ?? 0,
+            expectedAnswer: q.questionType === 1 ? '' : (q.expectedAnswer ?? ''),
+            yesNoAnswer:    q.questionType === 1 ? (q.expectedAnswer ?? 'Yes') : 'Yes',
             personalNotes:  q.personalNotes ?? '',
             source:         q.source ?? ''
           });
@@ -79,13 +85,15 @@ export class QuestionFormComponent implements OnInit {
   submit() {
     if (this.form.invalid) return;
 
+    const v = this.form.getRawValue();
     const dto = {
-      text:           this.form.getRawValue().text,
-      topicId:        this.form.getRawValue().topicId,
-      difficulty:     this.form.getRawValue().difficulty,
-      expectedAnswer: this.form.getRawValue().expectedAnswer || undefined,
-      personalNotes:  this.form.getRawValue().personalNotes  || undefined,
-      source:         this.form.getRawValue().source         || undefined
+      text:           v.text,
+      topicId:        v.topicId,
+      difficulty:     v.difficulty,
+      questionType:   v.questionType,
+      expectedAnswer: v.questionType === 1 ? v.yesNoAnswer : (v.expectedAnswer || undefined),
+      personalNotes:  v.personalNotes  || undefined,
+      source:         v.source         || undefined
     };
 
     this.saving.set(true);

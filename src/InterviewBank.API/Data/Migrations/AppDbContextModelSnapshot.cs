@@ -185,6 +185,11 @@ namespace InterviewBank.API.Data.Migrations
                     b.Property<int>("PracticeCount")
                         .HasColumnType("integer");
 
+                    b.Property<int>("QuestionType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue((int)InterviewBank.API.Entities.QuestionType.Essay);
+
                     b.Property<string>("Source")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");

@@ -31,6 +31,9 @@ public class CreateQuestionDto
     [Range(1, 3)]
     public int Difficulty { get; set; }
 
+    [Range(0, 1)]
+    public int QuestionType { get; set; } = 0;
+
     public string? ExpectedAnswer { get; set; }
     public string? PersonalNotes  { get; set; }
 
@@ -51,6 +54,9 @@ public class UpdateQuestionDto
     [Range(1, 3)]
     public int Difficulty { get; set; }
 
+    [Range(0, 1)]
+    public int QuestionType { get; set; } = 0;
+
     public string? ExpectedAnswer { get; set; }
     public string? PersonalNotes  { get; set; }
 
@@ -69,6 +75,7 @@ public class QuestionDto
     public string  Text            { get; set; } = string.Empty;
     public int     Difficulty      { get; set; }
     public string  DifficultyLabel { get; set; } = string.Empty;
+    public int     QuestionType     { get; set; }
     public string? ExpectedAnswer  { get; set; }
     public string? PersonalNotes   { get; set; }
     public string? Source          { get; set; }
@@ -87,6 +94,7 @@ public class QuestionDto
         Text            = q.Text,
         Difficulty      = (int)q.Difficulty,
         DifficultyLabel = q.Difficulty.ToString(),
+        QuestionType    = (int)q.QuestionType,
         ExpectedAnswer  = q.ExpectedAnswer,
         PersonalNotes   = q.PersonalNotes,
         Source          = q.Source,

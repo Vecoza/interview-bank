@@ -11,7 +11,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { MockInterviewService, SessionQuestion, SubmitAnswer } from '../../../core/services/mock-interview.service';
+import { MockInterviewService, SessionQuestion, SubmitAnswer, AiEvaluation } from '../../../core/services/mock-interview.service';
 import { CountdownTimerComponent } from '../../../shared/components/countdown-timer/countdown-timer.component';
 import { DifficultyBadgeComponent } from '../../../shared/components/difficulty-badge/difficulty-badge.component';
 
@@ -38,11 +38,20 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
   selfAssessment = signal<number | null>(null);
   submitting     = signal(false);
 
+  yesNoAnswer    = signal<'Yes' | 'No' | null>(null);
+  yesNoCorrect   = signal<boolean | null>(null);
+
+  aiEvaluating   = signal(false);
+  aiResult       = signal<AiEvaluation | null>(null);
+  aiError        = signal<string | null>(null);
+
   currentQuestion = computed<SessionQuestion | null>(() => {
     const s = this.session();
     if (!s) return null;
     return s.questions[this.currentIndex()] ?? null;
   });
+
+  isYesNo = computed(() => this.currentQuestion()?.questionType === 1);
 
   progressPct = computed(() => {
     const s = this.session();
@@ -70,6 +79,10 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
     this.userAnswer.set('');
     this.isRevealed.set(false);
     this.selfAssessment.set(null);
+    this.yesNoAnswer.set(null);
+    this.yesNoCorrect.set(null);
+    this.aiResult.set(null);
+    this.aiError.set(null);
     this.questionStartTime = Date.now();
     this.timeRemaining.set(this.session()!.timePerQuestion);
     this.startTimer();
@@ -86,11 +99,62 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
 
   revealAnswer() {
     this.timerSub?.unsubscribe();
+    if (this.isYesNo() && this.yesNoAnswer() === null) {
+      this.yesNoCorrect.set(false);
+      this.selfAssessment.set(3);
+    }
+    this.isRevealed.set(true);
+  }
+
+  answerYesNo(choice: 'Yes' | 'No') {
+    if (this.isRevealed()) return;
+    this.timerSub?.unsubscribe();
+    const correct = choice === this.currentQuestion()?.correctAnswer;
+    this.yesNoAnswer.set(choice);
+    this.yesNoCorrect.set(correct);
+    this.selfAssessment.set(correct ? 1 : 3);
+    this.userAnswer.set(choice);
     this.isRevealed.set(true);
   }
 
   rate(value: number) {
     this.selfAssessment.set(value);
+  }
+
+  checkWithAi() {
+    const q = this.currentQuestion();
+    if (!q || !q.text || !this.userAnswer()) return;
+
+    const expectedAnswer = (this.session()?.questions ?? []).length > 0
+      ? this.getExpectedAnswerForAi(q.id)
+      : null;
+
+    if (!expectedAnswer) {
+      this.aiError.set('No model answer available to compare against.');
+      return;
+    }
+
+    this.aiEvaluating.set(true);
+    this.aiResult.set(null);
+    this.aiError.set(null);
+
+    this.mis.evaluateAnswer(q.text, expectedAnswer, this.userAnswer()).subscribe({
+      next: result => {
+        this.aiResult.set(result);
+        this.aiEvaluating.set(false);
+      },
+      error: () => {
+        this.aiError.set('AI evaluation failed. Make sure Anthropic:ApiKey is set in the backend.');
+        this.aiEvaluating.set(false);
+      }
+    });
+  }
+
+  private getExpectedAnswerForAi(questionId: string): string | null {
+    if (this.mis.isLocalSession()) {
+      return this.mis.getLocalExpectedAnswer(questionId);
+    }
+    return null;
   }
 
   next() {
@@ -120,6 +184,14 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
 
   private finishSession() {
     this.submitting.set(true);
+
+    if (this.mis.isLocalSession()) {
+      const summary = this.mis.completeLocal(this.answers);
+      this.mis.setSummary(summary);
+      this.router.navigate(['/mock-interview/summary']);
+      return;
+    }
+
     this.mis.complete({
       sessionId: this.session()!.sessionId,
       answers:   this.answers
@@ -135,8 +207,8 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
   }
 
   readonly assessmentOptions = [
-    { value: 1, label: 'Got it',         color: 'primary' },
-    { value: 2, label: 'Partially got it', color: 'accent' },
-    { value: 3, label: 'Missed it',      color: 'warn' }
+    { value: 1, label: 'Got it',           color: 'primary' },
+    { value: 2, label: 'Partially got it', color: 'accent'  },
+    { value: 3, label: 'Missed it',        color: 'warn'    }
   ];
 }
