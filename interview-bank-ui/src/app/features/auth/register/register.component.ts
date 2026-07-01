@@ -64,8 +64,8 @@ export class RegisterComponent {
 
     this.auth.register(email, password).subscribe({
       next: () => {
-        this.snackBar.open('Account created! Please sign in.', 'OK', { duration: 4000 });
-        this.router.navigate(['/login']);
+        this.snackBar.open('Account created!', 'OK', { duration: 4000 });
+        this.router.navigate(['/questions']);
       },
       error: err => {
         const msgs: string[] = err.error?.errors ?? [];

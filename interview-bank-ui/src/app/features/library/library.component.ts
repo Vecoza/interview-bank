@@ -41,7 +41,8 @@ export class LibraryComponent implements OnInit {
     return qs;
   });
 
-  selectedCount = computed(() => this.selected().size);
+  selectedCount    = computed(() => this.selected().size);
+  selectableCount  = computed(() => this.filtered().filter(q => !q.alreadyImported).length);
 
   ngOnInit() {
     this.svc.getAll().subscribe({
@@ -61,14 +62,15 @@ export class LibraryComponent implements OnInit {
   }
 
   toggleSelect(id: string) {
+    if (this.allQuestions().find(q => q.id === id)?.alreadyImported) return;
     const s = new Set(this.selected());
     s.has(id) ? s.delete(id) : s.add(id);
     this.selected.set(s);
   }
 
   toggleAll() {
-    const ids = this.filtered().map(q => q.id);
-    const allSelected = ids.every(id => this.selected().has(id));
+    const ids = this.filtered().filter(q => !q.alreadyImported).map(q => q.id);
+    const allSelected = ids.length > 0 && ids.every(id => this.selected().has(id));
     const s = new Set(this.selected());
     if (allSelected) ids.forEach(id => s.delete(id));
     else             ids.forEach(id => s.add(id));
@@ -76,7 +78,7 @@ export class LibraryComponent implements OnInit {
   }
 
   allFilteredSelected() {
-    const ids = this.filtered().map(q => q.id);
+    const ids = this.filtered().filter(q => !q.alreadyImported).map(q => q.id);
     return ids.length > 0 && ids.every(id => this.selected().has(id));
   }
 
@@ -88,7 +90,16 @@ export class LibraryComponent implements OnInit {
       next: res => {
         this.importing.set(false);
         this.selected.set(new Set());
-        this.snackBar.open(`${res.imported} question${res.imported === 1 ? '' : 's'} added to your bank.`, 'View', { duration: 5000 })
+        this.allQuestions.update(list =>
+          list.map(q => ids.includes(q.id) ? { ...q, alreadyImported: true } : q)
+        );
+
+        const parts: string[] = [];
+        if (res.imported > 0)      parts.push(`${res.imported} question${res.imported === 1 ? '' : 's'} added to your bank`);
+        if (res.alreadyInBank > 0) parts.push(`${res.alreadyInBank} already in your bank`);
+        if (res.unmatchedTopics.length) parts.push(`${res.unmatchedTopics.length} skipped (topic not found)`);
+
+        this.snackBar.open(parts.join(', ') || 'Nothing to import.', 'View', { duration: 5000 })
           .onAction().subscribe(() => this.router.navigate(['/questions']));
       },
       error: () => {

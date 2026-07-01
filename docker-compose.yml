@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: interview_bank
+      POSTGRES_USER: interview_user
+      POSTGRES_PASSWORD: interview_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U interview_user -d interview_bank"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5050:8080"
+    environment:
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=interview_bank;Username=interview_user;Password=interview_password"
+      Jwt__Key: "change-me-to-a-secret-key-at-least-32-chars"
+      Jwt__Issuer: "InterviewBank.API"
+      Jwt__Audience: "InterviewBank.UI"
+      Jwt__ExpiresInMinutes: "60"
+      Anthropic__ApiKey: "your-anthropic-api-key"
+      AllowedOrigin: "http://localhost:4200"
+      ASPNETCORE_ENVIRONMENT: "Development"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

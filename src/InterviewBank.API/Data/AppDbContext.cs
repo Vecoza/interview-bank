@@ -43,12 +43,18 @@ public class AppDbContext : IdentityDbContext<AppUser>
              .HasForeignKey(q => q.TopicId)
              .OnDelete(DeleteBehavior.Restrict);
 
+            e.HasOne(q => q.LibraryQuestion)
+             .WithMany()
+             .HasForeignKey(q => q.LibraryQuestionId)
+             .OnDelete(DeleteBehavior.SetNull);
+
             e.HasIndex(q => q.UserId);
             e.HasIndex(q => q.TopicId);
             e.HasIndex(q => q.Difficulty);
             e.HasIndex(q => q.IsPracticed);
             e.HasIndex(q => new { q.UserId, q.TopicId });
             e.HasIndex(q => q.NextReviewAt);
+            e.HasIndex(q => new { q.UserId, q.LibraryQuestionId });
             e.Property(q => q.EaseFactor).HasDefaultValue(2.5);
         });
 

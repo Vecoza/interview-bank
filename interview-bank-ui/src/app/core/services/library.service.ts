@@ -8,6 +8,13 @@ export interface LibraryQuestion {
   difficulty:      number;
   text:            string;
   expectedAnswer?: string;
+  alreadyImported: boolean;
+}
+
+export interface ImportResult {
+  imported:        number;
+  alreadyInBank:   number;
+  unmatchedTopics: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -23,6 +30,6 @@ export class LibraryService {
   }
 
   import(ids: string[]) {
-    return this.http.post<{ imported: number }>(`${this.base}/import`, { ids });
+    return this.http.post<ImportResult>(`${this.base}/import`, { ids });
   }
 }

@@ -48,5 +48,9 @@ public class Question
 
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    public Guid? LibraryQuestionId { get; set; }
+
     public Topic Topic { get; set; } = null!;
+
+    public LibraryQuestion? LibraryQuestion { get; set; }
 }

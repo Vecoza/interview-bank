@@ -37,10 +37,10 @@
         </button>
       }
     </div>
-    @if (filtered().length > 0) {
+    @if (selectableCount() > 0) {
       <button class="btn-ghost" style="padding:5px 14px;font-size:13px;margin-left:auto;"
               (click)="toggleAll()">
-        {{ allFilteredSelected() ? 'Deselect all' : 'Select all (' + filtered().length + ')' }}
+        {{ allFilteredSelected() ? 'Deselect all' : 'Select all (' + selectableCount() + ')' }}
       </button>
     }
   </div>
@@ -59,7 +59,9 @@
   }
 
   @for (q of filtered(); track q.id) {
-    <div class="question-card glass-card" [class.is-selected]="selected().has(q.id)"
+    <div class="question-card glass-card"
+         [class.is-selected]="selected().has(q.id)"
+         [class.is-imported]="q.alreadyImported"
          (click)="toggleSelect(q.id)" style="cursor:pointer;">
 
       <div class="diff-dot" [class]="['','easy','medium','hard'][q.difficulty]"></div>
@@ -71,15 +73,23 @@
           <span class="tag" [class]="['','tag-easy','tag-medium','tag-hard'][q.difficulty]">
             {{ ['','Easy','Medium','Hard'][q.difficulty] }}
           </span>
+          @if (q.alreadyImported) {
+            <span class="tag imported-tag">
+              <mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:text-bottom;">check_circle</mat-icon>
+              Added
+            </span>
+          }
         </div>
       </div>
 
       <div style="flex-shrink:0;display:flex;align-items:center;padding-left:12px;">
-        <div class="select-circle" [class.checked]="selected().has(q.id)">
-          @if (selected().has(q.id)) {
-            <mat-icon style="font-size:18px;width:18px;height:18px;color:var(--accent);">check</mat-icon>
-          }
-        </div>
+        @if (!q.alreadyImported) {
+          <div class="select-circle" [class.checked]="selected().has(q.id)">
+            @if (selected().has(q.id)) {
+              <mat-icon style="font-size:18px;width:18px;height:18px;color:var(--accent);">check</mat-icon>
+            }
+          </div>
+        }
       </div>
 
     </div>
@@ -91,6 +101,16 @@
 .question-card.is-selected {
   border-color: var(--accent);
   background: rgba(59, 130, 246, 0.06);
+}
+.question-card.is-imported {
+  cursor: default;
+  opacity: 0.65;
+}
+.imported-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--success, #22c55e);
 }
 .select-circle {
   width: 24px;
