@@ -1,256 +1,214 @@
 # Interview Question Bank
 
+[![API](https://github.com/Vecoza/interview-bank/actions/workflows/api.yml/badge.svg)](https://github.com/Vecoza/interview-bank/actions/workflows/api.yml)
+[![UI](https://github.com/Vecoza/interview-bank/actions/workflows/ui.yml/badge.svg)](https://github.com/Vecoza/interview-bank/actions/workflows/ui.yml)
+
 > An interview prep tool built by someone who got tired of losing flashcards and making excuses.
 > Now the excuses are automated.
 
-**Stack:** ASP.NET Core 10 · Angular 18 · PostgreSQL · JWT Auth · Claude AI  
-**Hosting:** Fly.io (API) · Vercel (UI) · GitHub Actions (CI/CD) — all free tier
+You keep your own bank of interview questions, practise them in timed mock interviews, rate
+yourself after every answer, and a spaced-repetition scheduler decides what you should see
+again and when. Essay answers can optionally be graded by an LLM against your model answer.
+
+**Stack:** ASP.NET Core (.NET 10) · EF Core + PostgreSQL · Angular 18 + Angular Material · JWT auth · Docker
+
+> The hosted version (Vercel + Fly.io) is currently offline. Everything below runs locally.
 
 ---
 
-## Live
+## How it works
 
-| Service | URL |
-|---------|-----|
-| Angular SPA | `https://interview-bank.vercel.app` |
-| .NET API | `https://interview-bank-api.fly.dev` |
-| API docs (Scalar) | `https://interview-bank-api.fly.dev/scalar` |
+1. **Build a bank.** Add questions with a topic, difficulty (Easy / Medium / Hard) and a model
+   answer. Questions are either **Essay** or **Yes / No**. Or skip the typing and import from
+   the built-in library (51 questions across JavaScript, C#, SQL and Algorithms).
+2. **Run a mock interview.** Pick the number of questions, topics, difficulty, time per
+   question (30–180 s) and how questions are picked:
+   - *Random*
+   - *Least recently practised*
+   - *Hardest first*
+   - *Due for review* – driven by spaced repetition
+3. **Answer against the clock.**
+   - *Essay:* type your answer, reveal the model answer, then rate yourself
+     **Got it / Partially / Missed it**. Optionally hit **Check my answer** for an AI score
+     (0–100) with a sentence or two of feedback.
+   - *Yes / No:* two buttons, graded instantly. Run out of time and it counts as missed.
+4. **Let the scheduler do its job.** Your rating feeds an SM-2 scheduler: missed questions are
+   due again immediately, good answers come back after 1 day, then 6, then at a growing
+   interval based on how easy the question has been for you.
+5. **Check the dashboard.** Practice coverage per topic and difficulty, a daily streak, your
+   weakest topics (by miss rate), recent sessions and how many questions are due.
 
----
-
-## What does this thing actually do?
-
-Glad you asked, imaginary reader.
-
-### Your Question Bank
-Add interview questions. Assign topics and difficulty. Write the model answer so Future You — the one sweating through a technical screen at 9am — can actually study something useful. Filter by topic, difficulty, or "questions I've never looked at" (the largest category, statistically speaking).
-
-### Mock Interview Mode
-Sit down. Start a session. A countdown timer starts. You can no longer pretend you're "almost ready". You have to answer or you don't. Three self-assessment buttons judge you afterward: **Got it**, **Partially**, and **Missed it** (the one you'll press more than you'd like to admit).
-
-**Two question types, because the world is binary:**
-
-#### Essay questions
-You write your answer. The clock runs. You hit "Reveal answer" when you either know it or give up. Then you can hit **"Check my answer with AI"** and Claude will evaluate your response against the model answer, score it 0–100, and tell you honestly where you went wrong. Unlike your friends, it won't soften the blow.
-
-#### Yes / No questions
-Sometimes the answer is just yes or no. Is `null == undefined` in JavaScript? Can SQL do a self-join? You get two big buttons. You pick one. The app tells you immediately whether you're right or tragically wrong. No self-assessment needed — the machine has judged you already.
-
-### Spaced Repetition
-The app tracks when you last practiced each question and schedules the next review using spaced repetition. Questions you got wrong come back sooner. Questions you nailed go on holiday for a while. The algorithm doesn't care about your feelings.
-
-### Question Library
-A curated set of JavaScript, C#, SQL, and Algorithms questions — ready to use without setup. Browse them, cherry-pick the ones you want, and import them into your bank. Or use them directly in a mock interview without importing at all (the lazy-but-effective option).
-
-### Progress Dashboard
-Charts showing your practice history by topic and difficulty. A streak counter. Your weakest topics highlighted. It's the "oh no" dashboard. You'll check it once a week, feel bad, then practice for 20 minutes and feel better.
+You can also run a mock interview straight from the library without importing anything. Those
+sessions are practice only: they're not saved and don't affect your review schedule.
 
 ---
 
-## Features
+## Running it locally
 
-- JWT auth with HttpOnly refresh-token rotation (no localStorage tokens, we're not animals)
-- Full question CRUD — URL-synced filters, pagination, practiced-state tracking
-- **Yes/No questions** — instant grading during mock interviews, no second-guessing
-- **AI essay evaluation** — Claude scores your answer 0–100 and gives specific feedback
-- **Mock Interview from Library** — use curated questions directly, no import required
-- Spaced repetition scheduling (SM-2-inspired)
-- Progress dashboard with Chart.js
-- Question library with 4 topic areas
-- Responsive Angular Material UI that doesn't look like it's from 2012
+### Option A: Docker (API + database)
 
----
-
-## Local Development
-
-### Prerequisites
-
-| Tool | Version |
-|------|---------|
-| .NET SDK | 10.x |
-| Node.js | 22.x |
-| Angular CLI | 18.x (`npm i -g @angular/cli`) |
-| EF Core CLI | latest (`dotnet tool install -g dotnet-ef`) |
-| PostgreSQL | Neon.tech free tier or local |
-
-### 1 — Clone
+Requires Docker and Node.js 22.
 
 ```bash
-git clone https://github.com/<your-username>/interview-bank.git
-cd interview-bank
+# optional, enables the "Check my answer" AI grading
+export ANTHROPIC_API_KEY=sk-ant-...
+
+docker compose up --build        # API on http://localhost:5050, Postgres on localhost:5433
+
+cd interview-bank-ui
+npm install
+npm start                        # UI on http://localhost:4200
 ```
 
-### 2 — API config
+The API applies database migrations and seeds topics and the question library on startup.
+API docs (Scalar) are at <http://localhost:5050/scalar>.
 
-Copy the example and fill in your values:
+### Option B: without Docker
+
+Requires .NET SDK 10, Node.js 22 and a PostgreSQL 15+ database.
 
 ```bash
 cp src/InterviewBank.API/appsettings.example.json src/InterviewBank.API/appsettings.json
-```
+# fill in ConnectionStrings:Default and Jwt:Key (32+ characters)
 
-Or use user-secrets (recommended, keeps credentials out of source):
-
-```bash
 cd src/InterviewBank.API
-dotnet user-secrets set "ConnectionStrings:Default" "Host=...;Database=...;Username=...;Password=...;SSL Mode=Require"
-dotnet user-secrets set "Jwt:Key" "<random-32-char-string>"
-dotnet user-secrets set "AllowedOrigin" "http://localhost:4200"
-dotnet user-secrets set "Anthropic:ApiKey" "sk-ant-..."
+dotnet run                       # http://localhost:5050
+
+cd ../../interview-bank-ui
+npm install && npm start
 ```
 
-> The `Anthropic:ApiKey` is optional. Without it the "Check my answer with AI" button will return a 503 and politely refuse to work.  
-> Get a key at [console.anthropic.com](https://console.anthropic.com). The AI calls use `claude-haiku-4-5` which is cheap enough that you won't notice it on your bill until you've practiced 10,000 questions (a good problem to have).
+You can use `dotnet user-secrets` instead of `appsettings.json` if you prefer to keep
+credentials out of the project folder.
 
-### 3 — Apply migrations
+### Configuration
+
+| Key | Required | Notes |
+| --- | --- | --- |
+| `ConnectionStrings:Default` | yes | PostgreSQL connection string |
+| `Jwt:Key` | yes | HMAC signing key, at least 32 characters |
+| `Jwt:Issuer` / `Jwt:Audience` | no | Defaults: `InterviewBank.API` / `InterviewBank.UI` |
+| `Jwt:ExpiresInMinutes` | no | Access token lifetime, default 15 |
+| `AllowedOrigin` | no | UI origin(s) for CORS, comma separated. Default `http://localhost:4200` |
+| `Anthropic:ApiKey` | no | Enables AI grading. Without it the endpoint returns 503 and the rest of the app works normally |
+| `Anthropic:Model` | no | Default `claude-haiku-4-5` |
+| `Auth:RefreshCookieSameSite` | no | `Strict` in Development, `None` otherwise (UI and API on different domains) |
+
+In Docker / Fly.io use environment variables with `__` as the separator, e.g. `Jwt__Key`.
+
+---
+
+## Tests
 
 ```bash
-cd src/InterviewBank.API
-dotnet ef database update
-```
+# API: unit + integration tests (needs Docker running, a PostgreSQL container is started automatically)
+dotnet test InterviewBank.slnx
 
-### 4 — Run API
-
-```bash
-dotnet run
-```
-
-Scalar API docs available at `http://localhost:5000/scalar`.
-
-### 5 — Run Angular
-
-```bash
+# UI: unit tests in headless Chrome
 cd interview-bank-ui
-npm install
-ng serve
+npm run test:ci
 ```
 
-App available at `http://localhost:4200`.
+**API (48 tests)** – xUnit. The integration tests boot the real API with
+`WebApplicationFactory` against a throwaway PostgreSQL 16 container (Testcontainers), so
+migrations, seeders and Postgres-specific queries are exercised for real. Covered:
+
+- auth: register / login, refresh-token rotation and replay protection, logout revocation, tampered tokens
+- questions: CRUD, filters and paging, per-user isolation, Yes/No validation
+- topics: seeded system topics, private custom topics, delete protection
+- library: seeding, filtering, import and de-duplication
+- mock interviews: question selection, model answers, completing a session, spaced-repetition
+  updates, "due for review" sessions, ownership and double-submit checks
+- dashboard statistics, AI grading endpoint (with a fake evaluator), SM-2 maths, AI response parsing
+
+**UI (38 tests)** – Jasmine + Karma: auth service (incl. shared token refresh), HTTP
+interceptor, route guards, question and mock-interview services, the countdown timer and the
+active-session screen (Yes/No grading, timeouts, AI check, submitting and retrying).
+
+Both suites run in GitHub Actions on every push and pull request.
+
+---
+
+## Project structure
+
+```
+interview-bank/
+├── src/InterviewBank.API/        ASP.NET Core Web API
+│   ├── Controllers/              Auth, Questions, Topics, Library, MockInterview, Dashboard, Ai
+│   ├── Services/                 TokenService, MockInterviewService, SpacedRepetitionService, AnswerEvaluator
+│   ├── Entities/ DTOs/           domain model and request/response contracts
+│   ├── Data/                     DbContext, migrations, seeders (topics + question library)
+│   └── Middleware/               global exception handler
+├── tests/InterviewBank.API.Tests/
+│   ├── Unit/                     SM-2 scheduler, AI response parsing
+│   └── Integration/              HTTP-level tests against PostgreSQL
+├── interview-bank-ui/            Angular 18 SPA (standalone components, signals)
+│   └── src/app/
+│       ├── core/                 auth service, interceptor, guards, API services
+│       ├── features/             auth, questions, library, mock-interview, dashboard
+│       └── shared/               timer, badges, dialogs, pipes
+├── Dockerfile                    API image
+├── docker-compose.yml            local API + PostgreSQL
+├── fly.toml                      Fly.io config
+└── .github/workflows/            api.yml, ui.yml
+```
+
+### A few design notes
+
+- **Auth:** short-lived JWT access token kept in memory only, plus an HttpOnly refresh-token
+  cookie that rotates on every use. The UI restores the session on page load and shares one
+  refresh call between parallel requests, since a refresh token can only be used once.
+- **Mock interview sessions** are stored in the database as soon as they start, so finishing
+  one doesn't depend on server memory and survives restarts.
+- **Data isolation:** every query is scoped to the signed-in user; custom topics are private.
 
 ---
 
 ## Deployment
 
-### Fly.io — API
+CI builds and tests both apps on every push. Deploys run on pushes to `main` and are skipped
+(not failed) when the secrets below are missing.
 
-#### First deploy
+| Secret | Used for |
+| --- | --- |
+| `FLY_API_TOKEN` | API → Fly.io (`fly tokens create deploy`) |
+| `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | UI → Vercel |
+
+First API deploy:
 
 ```bash
-fly auth login
 fly launch --name interview-bank-api --region iad --no-deploy
-fly secrets set ConnectionStrings__Default="<neon-connection-string>"
-fly secrets set Jwt__Key="<random-32-char-string>"
-fly secrets set AllowedOrigin="https://interview-bank.vercel.app"
-fly secrets set Anthropic__ApiKey="sk-ant-..."
+fly secrets set ConnectionStrings__Default="<postgres-connection-string>" \
+                Jwt__Key="<random-32+-char-string>" \
+                AllowedOrigin="https://<your-ui-domain>" \
+                Anthropic__ApiKey="<optional>"
 fly deploy
 ```
 
-#### Subsequent deploys
+For the UI, point `src/environments/environment.prod.ts` at your API URL and set the Vercel
+output directory to `dist/interview-bank-ui/browser`.
 
-Handled automatically by GitHub Actions on push to `main`.
-
-### Vercel — Angular SPA
-
-#### First deploy
-
-```bash
-cd interview-bank-ui
-npm i -g vercel
-vercel
-```
-
-Follow the prompts. Set `Output Directory` to `dist/interview-bank-ui/browser`.
-
----
-
-## GitHub Actions Secrets
-
-Add these under **Settings → Secrets and variables → Actions**:
-
-| Secret | How to get it |
-|--------|--------------|
-| `FLY_API_TOKEN` | `fly tokens create deploy` |
-| `VERCEL_TOKEN` | Vercel dashboard → Account → Tokens |
-| `VERCEL_ORG_ID` | `vercel env pull` or Vercel dashboard |
-| `VERCEL_PROJECT_ID` | `vercel env pull` or Vercel dashboard |
-
----
-
-## Project Structure
-
-```
-interview-bank/
-├── .github/workflows/
-│   ├── api.yml
-│   ├── ui.yml
-│   └── pr-check.yml
-├── src/
-│   └── InterviewBank.API/
-│       ├── Controllers/
-│       │   ├── AiController.cs        ← essay answer evaluation
-│       │   ├── AuthController.cs
-│       │   ├── LibraryController.cs
-│       │   ├── MockInterviewController.cs
-│       │   ├── QuestionsController.cs
-│       │   └── TopicsController.cs
-│       ├── Data/
-│       │   ├── AppDbContext.cs
-│       │   ├── Migrations/
-│       │   └── Seeders/
-│       ├── DTOs/
-│       ├── Entities/
-│       │   ├── Question.cs            ← QuestionType enum (Essay | YesNo)
-│       │   └── ...
-│       ├── Middleware/
-│       └── Services/
-├── interview-bank-ui/
-│   └── src/app/
-│       ├── core/services/
-│       │   ├── mock-interview.service.ts  ← AI eval, local sessions
-│       │   └── ...
-│       ├── features/
-│       │   ├── mock-interview/
-│       │   │   ├── session-active/    ← Yes/No buttons, AI check panel
-│       │   │   ├── session-setup/     ← source selector (bank vs library)
-│       │   │   └── session-summary/
-│       │   ├── questions/
-│       │   │   └── question-form/     ← question type selector
-│       │   └── library/
-│       └── shared/
-├── Dockerfile
-├── fly.toml
-└── README.md
-```
-
----
-
-## Implementation Phases
-
-| # | Phase | Status |
-|---|-------|--------|
-| 1 | Project setup & database foundation | ✅ |
-| 2 | Authentication — JWT + refresh tokens | ✅ |
-| 3 | Questions & topics CRUD | ✅ |
-| 4 | Mock interview mode | ✅ |
-| 5 | Progress dashboard | ✅ |
-| 6 | Deployment, CI/CD | ✅ |
-| 7 | Library source in mock interview | ✅ |
-| 8 | Yes/No questions + AI essay evaluation | ✅ |
+Because the UI and API live on different domains, the refresh cookie is sent as
+`SameSite=None; Secure`. Browsers that block third-party cookies (Safari by default) won't keep
+you signed in across page reloads; serving the API from a subdomain of the UI's domain avoids that.
 
 ---
 
 ## FAQ
 
-**Q: Does the AI actually know if my SQL answer is correct?**  
-A: It reads both your answer and the model answer, compares them, and gives you a score and specific feedback. It's not perfect — it's an LLM, not a database — but it's better than asking your dog.
+**Does the AI actually know if my SQL answer is correct?**
+It compares your answer with the model answer and returns a score and specific feedback. It's
+not perfect, it's a language model rather than a database, but it's better than asking your dog.
 
-**Q: What happens when the countdown timer hits zero on a Yes/No question?**  
-A: It marks it as Missed and shows you the correct answer. The timer has no mercy and neither do interviewers.
+**What happens when the timer hits zero on a Yes/No question?**
+It's marked as missed and the correct answer is shown. The timer has no mercy, and neither do interviewers.
 
-**Q: Is my data stored?**  
-A: Your questions and session results are saved to your account. Your typed answers are stored per session. The AI evaluation requests are not stored — they go to Anthropic's API and come back as a score. Anthropic's [privacy policy](https://www.anthropic.com/legal/privacy) applies to those calls.
+**Is my data stored?**
+Questions, sessions and your typed answers are saved to your account. Text sent for AI grading
+goes to the Anthropic API and isn't stored by this app.
 
-**Q: Can I use this without setting up an Anthropic key?**  
-A: Yes. Everything works except the AI accuracy check button. It'll show an error message instead of a score. Not ideal, but the Yes/No instant grading works without AI entirely.
+**Can I use it without an AI key?**
+Yes. Everything except the "Check my answer" button works without one.
 
-**Q: Why ASP.NET Core and Angular? That's not the most popular stack.**  
-A: Exactly.
+**Why ASP.NET Core and Angular? That's not the most popular stack.**
+Exactly.
