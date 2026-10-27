@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using InterviewBank.API.Data;
 using InterviewBank.API.DTOs.MockInterview;
+using InterviewBank.API.Entities;
 using InterviewBank.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,28 +33,24 @@ public class MockInterviewController : ControllerBase
         if (questions.Count == 0)
             return BadRequest(new { error = "No questions match the selected filters." });
 
-        var sessionId = Guid.NewGuid();
+        var session = await _service.StartSessionAsync(userId, dto, questions);
 
-        var response = new ActiveSessionDto
+        return Ok(new ActiveSessionDto
         {
-            SessionId       = sessionId,
+            SessionId       = session.Id,
             TimePerQuestion = dto.TimePerQuestion,
             Questions       = questions.Select((q, i) => new SessionQuestionDto
             {
-                Id            = q.Id,
-                Text          = q.Text,
-                TopicName     = q.Topic.Name,
-                Difficulty    = (int)q.Difficulty,
-                QuestionOrder = i + 1,
-                QuestionType  = (int)q.QuestionType,
-                CorrectAnswer = q.QuestionType == Entities.QuestionType.YesNo ? q.ExpectedAnswer : null
+                Id             = q.Id,
+                Text           = q.Text,
+                TopicName      = q.Topic.Name,
+                Difficulty     = (int)q.Difficulty,
+                QuestionOrder  = i + 1,
+                QuestionType   = (int)q.QuestionType,
+                CorrectAnswer  = q.QuestionType == Entities.QuestionType.YesNo ? q.ExpectedAnswer : null,
+                ExpectedAnswer = q.ExpectedAnswer
             }).ToList()
-        };
-
-        HttpContext.Session.SetString($"session:{sessionId}:config", System.Text.Json.JsonSerializer.Serialize(dto));
-        HttpContext.Session.SetString($"session:{sessionId}:startedAt", DateTimeOffset.UtcNow.ToString("O"));
-
-        return Ok(response);
+        });
     }
 
     [HttpPost("complete")]
@@ -61,19 +58,9 @@ public class MockInterviewController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        var configJson  = HttpContext.Session.GetString($"session:{dto.SessionId}:config");
-        var startedAtStr = HttpContext.Session.GetString($"session:{dto.SessionId}:startedAt");
-
-        if (configJson is null || startedAtStr is null)
+        var session = await _service.CompleteSessionAsync(userId, dto.SessionId, dto.Answers);
+        if (session is null)
             return BadRequest(new { error = "Session not found or already completed." });
-
-        var config    = System.Text.Json.JsonSerializer.Deserialize<StartSessionDto>(configJson)!;
-        var startedAt = DateTimeOffset.Parse(startedAtStr);
-
-        var session = await _service.SaveSessionAsync(userId, dto.SessionId, config, startedAt, dto.Answers);
-
-        HttpContext.Session.Remove($"session:{dto.SessionId}:config");
-        HttpContext.Session.Remove($"session:{dto.SessionId}:startedAt");
 
         var results = await _db.SessionQuestions
             .Include(sq => sq.Question).ThenInclude(q => q.Topic)
@@ -85,12 +72,12 @@ public class MockInterviewController : ControllerBase
         {
             SessionId        = session.Id,
             StartedAt        = session.StartedAt,
-            CompletedAt      = session.CompletedAt,
+            CompletedAt      = session.CompletedAt!.Value,
             TotalQuestions   = session.TotalQuestions,
             TimePerQuestion  = session.TimePerQuestion,
-            GotItCount       = results.Count(r => (int?)r.SelfAssessment == 1),
-            PartialCount     = results.Count(r => (int?)r.SelfAssessment == 2),
-            MissedCount      = results.Count(r => (int?)r.SelfAssessment == 3),
+            GotItCount       = results.Count(r => r.SelfAssessment == SelfAssessment.GotIt),
+            PartialCount     = results.Count(r => r.SelfAssessment == SelfAssessment.Partial),
+            MissedCount      = results.Count(r => r.SelfAssessment == SelfAssessment.Missed),
             AverageTimeTaken = results.Any() ? results.Average(r => r.TimeTakenSeconds) : 0,
             Results          = results.Select(r => new SessionResultItemDto
             {
@@ -128,13 +115,12 @@ public class MockInterviewController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         var sessions = await _db.MockInterviewSessions
-            .Include(s => s.SessionQuestions)
-            .Where(s => s.UserId == userId)
+            .Where(s => s.UserId == userId && s.CompletedAt != null)
             .OrderByDescending(s => s.CompletedAt)
             .Select(s => new PastSessionDto
             {
                 SessionId      = s.Id,
-                CompletedAt    = s.CompletedAt,
+                CompletedAt    = s.CompletedAt!.Value,
                 TotalQuestions = s.TotalQuestions,
                 GotItCount     = s.SessionQuestions.Count(sq => (int?)sq.SelfAssessment == 1),
                 PartialCount   = s.SessionQuestions.Count(sq => (int?)sq.SelfAssessment == 2),

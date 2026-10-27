@@ -78,7 +78,7 @@ public class LibraryController : ControllerBase
 
         var topicNames = libraryItems.Select(q => q.TopicName).Distinct().ToList();
         var topics = await _db.Topics
-            .Where(t => topicNames.Contains(t.Name))
+            .Where(t => t.IsSystem && topicNames.Contains(t.Name))
             .ToDictionaryAsync(t => t.Name);
 
         var now = DateTimeOffset.UtcNow;

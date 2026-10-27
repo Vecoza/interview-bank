@@ -33,7 +33,7 @@ public class DashboardController : ControllerBase
             .Include(s => s.SessionQuestions)
                 .ThenInclude(sq => sq.Question)
                     .ThenInclude(q => q.Topic)
-            .Where(s => s.UserId == userId)
+            .Where(s => s.UserId == userId && s.CompletedAt != null)
             .OrderByDescending(s => s.CompletedAt)
             .Take(30)
             .ToListAsync();
@@ -61,7 +61,7 @@ public class DashboardController : ControllerBase
             .Select(s => new RecentSessionDto
             {
                 SessionId      = s.Id,
-                CompletedAt    = s.CompletedAt,
+                CompletedAt    = s.CompletedAt!.Value,
                 TotalQuestions = s.TotalQuestions,
                 GotItCount     = s.SessionQuestions.Count(sq => (int?)sq.SelfAssessment == 1),
                 PartialCount   = s.SessionQuestions.Count(sq => (int?)sq.SelfAssessment == 2),
@@ -105,7 +105,7 @@ public class DashboardController : ControllerBase
         if (sessions.Count == 0) return 0;
 
         var sessionDays = sessions
-            .Select(s => s.CompletedAt.UtcDateTime.Date)
+            .Select(s => s.CompletedAt!.Value.UtcDateTime.Date)
             .Distinct()
             .OrderByDescending(d => d)
             .ToList();

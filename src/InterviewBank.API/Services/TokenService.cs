@@ -11,6 +11,9 @@ namespace InterviewBank.API.Services;
 
 public class TokenService
 {
+    public const string DefaultIssuer   = "InterviewBank.API";
+    public const string DefaultAudience = "InterviewBank.UI";
+
     private readonly IConfiguration _config;
     private readonly AppDbContext   _db;
 
@@ -33,9 +36,13 @@ public class TokenService
             new Claim(ClaimTypes.NameIdentifier,      user.Id)
         };
 
+        var lifetime = int.TryParse(_config["Jwt:ExpiresInMinutes"], out var m) && m > 0 ? m : 15;
+
         var token = new JwtSecurityToken(
+            issuer:             _config["Jwt:Issuer"] ?? DefaultIssuer,
+            audience:           _config["Jwt:Audience"] ?? DefaultAudience,
             claims:             claims,
-            expires:            DateTime.UtcNow.AddMinutes(15),
+            expires:            DateTime.UtcNow.AddMinutes(lifetime),
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
 
         return new JwtSecurityTokenHandler().WriteToken(token);

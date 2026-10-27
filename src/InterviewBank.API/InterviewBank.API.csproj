@@ -18,7 +18,7 @@
     <!-- ASP.NET Identity -->
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.*" />
 
-    <!-- JWT Bearer Auth (added in Phase 2) -->
+    <!-- JWT Bearer Auth -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.*" />
 
     <!-- Scalar — modern API docs replacing Swagger UI -->

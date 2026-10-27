@@ -38,30 +38,28 @@ builder.Services
             ValidateIssuerSigningKey = true,
             IssuerSigningKey         = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-            ValidateIssuer   = false,
-            ValidateAudience = false,
+            ValidateIssuer   = true,
+            ValidIssuer      = builder.Configuration["Jwt:Issuer"] ?? TokenService.DefaultIssuer,
+            ValidateAudience = true,
+            ValidAudience    = builder.Configuration["Jwt:Audience"] ?? TokenService.DefaultAudience,
             ClockSkew        = TimeSpan.Zero
         };
     });
 
+// AllowedOrigin may contain several origins separated by commas
+var allowedOrigins = (builder.Configuration["AllowedOrigin"] ?? "http://localhost:4200")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 builder.Services.AddCors(opt => opt.AddDefaultPolicy(p =>
-    p.WithOrigins(
-        builder.Configuration["AllowedOrigin"] ?? "http://localhost:4200")
+    p.WithOrigins(allowedOrigins)
      .AllowAnyMethod()
      .AllowAnyHeader()
      .AllowCredentials()));
 
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(opt =>
-{
-    opt.IdleTimeout   = TimeSpan.FromHours(2);
-    opt.Cookie.HttpOnly  = true;
-    opt.Cookie.IsEssential = true;
-});
-
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<MockInterviewService>();
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<IAnswerEvaluator, AnthropicAnswerEvaluator>(c =>
+    c.Timeout = TimeSpan.FromSeconds(30));
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -84,11 +82,12 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
 app.UseCors();
-app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
+
+public partial class Program;

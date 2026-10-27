@@ -124,7 +124,7 @@ namespace InterviewBank.API.Data.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTimeOffset>("CompletedAt")
+                    b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("StartedAt")
@@ -328,8 +328,10 @@ namespace InterviewBank.API.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("Name", "CreatedByUserId")
                         .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("Name", "CreatedByUserId"), false);
 
                     b.ToTable("Topics");
                 });
@@ -500,7 +502,7 @@ namespace InterviewBank.API.Data.Migrations
                     b.HasOne("InterviewBank.API.Entities.Question", "Question")
                         .WithMany()
                         .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("InterviewBank.API.Entities.MockInterviewSession", "Session")

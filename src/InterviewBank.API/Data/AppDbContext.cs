@@ -25,7 +25,8 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasKey(t => t.Id);
             e.Property(t => t.Id).HasDefaultValueSql("gen_random_uuid()");
             e.Property(t => t.Name).HasMaxLength(100).IsRequired();
-            e.HasIndex(t => t.Name).IsUnique();
+            // Names are unique per owner; system topics have no owner
+            e.HasIndex(t => new { t.Name, t.CreatedByUserId }).IsUnique().AreNullsDistinct(false);
         });
 
         // ── Question ─────────────────────────────────────────────────────────
@@ -82,7 +83,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
             e.HasOne(sq => sq.Question)
              .WithMany()
              .HasForeignKey(sq => sq.QuestionId)
-             .OnDelete(DeleteBehavior.Restrict);
+             .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ── LibraryQuestion ───────────────────────────────────────────────────

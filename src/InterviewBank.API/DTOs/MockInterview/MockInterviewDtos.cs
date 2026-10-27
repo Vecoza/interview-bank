@@ -37,11 +37,13 @@ public class SessionQuestionDto
     public int     QuestionOrder { get; set; }
     public int     QuestionType  { get; set; }
     public string? CorrectAnswer { get; set; }
+
+    /// <summary>Model answer, shown after the user reveals it and used for AI grading.</summary>
+    public string? ExpectedAnswer { get; set; }
 }
 
 public class SubmitAnswerDto
 {
-    [Required]
     public Guid SessionId { get; set; }
 
     [Required]

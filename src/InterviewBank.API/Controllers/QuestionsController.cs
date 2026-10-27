@@ -42,6 +42,9 @@ public class QuestionsController : ControllerBase
             query = query.Where(q => q.IsPracticed == filter.IsPracticed.Value);
 
         // ── Pagination ────────────────────────────────────────────────────────
+        filter.Page     = Math.Max(1, filter.Page);
+        filter.PageSize = Math.Clamp(filter.PageSize, 1, 100);
+
         var total = await query.CountAsync();
 
         var questions = await query
@@ -81,7 +84,10 @@ public class QuestionsController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-        var topicExists = await _db.Topics.AnyAsync(t => t.Id == dto.TopicId);
+        if (dto.QuestionType == (int)QuestionType.YesNo && NormaliseYesNo(dto.ExpectedAnswer) is not ("Yes" or "No"))
+            return BadRequest(new { error = "Yes/No questions need an expected answer of Yes or No." });
+
+        var topicExists = await TopicVisibleAsync(dto.TopicId, userId);
         if (!topicExists)
             return BadRequest(new { error = "Topic not found." });
 
@@ -123,7 +129,10 @@ public class QuestionsController : ControllerBase
 
         if (question is null) return NotFound();
 
-        var topicExists = await _db.Topics.AnyAsync(t => t.Id == dto.TopicId);
+        if (dto.QuestionType == (int)QuestionType.YesNo && NormaliseYesNo(dto.ExpectedAnswer) is not ("Yes" or "No"))
+            return BadRequest(new { error = "Yes/No questions need an expected answer of Yes or No." });
+
+        var topicExists = await TopicVisibleAsync(dto.TopicId, userId);
         if (!topicExists)
             return BadRequest(new { error = "Topic not found." });
 
@@ -160,6 +169,9 @@ public class QuestionsController : ControllerBase
 
         return NoContent();
     }
+
+    private Task<bool> TopicVisibleAsync(Guid topicId, string userId) =>
+        _db.Topics.AnyAsync(t => t.Id == topicId && (t.IsSystem || t.CreatedByUserId == userId));
 
     private static string? NormaliseYesNo(string? raw) =>
         raw?.Trim().ToLowerInvariant() switch

@@ -8,7 +8,8 @@ public class MockInterviewSession
 
     public DateTimeOffset StartedAt { get; set; }
 
-    public DateTimeOffset CompletedAt { get; set; }
+    /// <summary>Null while the session is still in progress.</summary>
+    public DateTimeOffset? CompletedAt { get; set; }
 
     public int TotalQuestions { get; set; }
 

@@ -14,11 +14,16 @@ public class AuthController : ControllerBase
 
     private readonly UserManager<AppUser> _users;
     private readonly TokenService         _tokens;
+    private readonly IConfiguration       _config;
+    private readonly IWebHostEnvironment  _env;
 
-    public AuthController(UserManager<AppUser> users, TokenService tokens)
+    public AuthController(UserManager<AppUser> users, TokenService tokens,
+        IConfiguration config, IWebHostEnvironment env)
     {
         _users  = users;
         _tokens = tokens;
+        _config = config;
+        _env    = env;
     }
 
     // POST /api/auth/register
@@ -80,7 +85,7 @@ public class AuthController : ControllerBase
                 await _tokens.RevokeAllForUserAsync(stored.UserId);
         }
 
-        Response.Cookies.Delete(RefreshTokenCookie);
+        Response.Cookies.Delete(RefreshTokenCookie, RefreshCookieOptions());
         return NoContent();
     }
 
@@ -103,12 +108,25 @@ public class AuthController : ControllerBase
 
     private void SetRefreshCookie(string token, DateTimeOffset expires)
     {
-        Response.Cookies.Append(RefreshTokenCookie, token, new CookieOptions
+        var options = RefreshCookieOptions();
+        options.Expires = expires;
+        Response.Cookies.Append(RefreshTokenCookie, token, options);
+    }
+
+    // The UI and API live on different domains in production (Vercel / Fly.io), so the cookie
+    // must be SameSite=None there. Locally both run on localhost and Strict is enough.
+    private CookieOptions RefreshCookieOptions()
+    {
+        var sameSite = Enum.TryParse<SameSiteMode>(_config["Auth:RefreshCookieSameSite"], true, out var mode)
+            ? mode
+            : _env.IsDevelopment() ? SameSiteMode.Strict : SameSiteMode.None;
+
+        return new CookieOptions
         {
-            HttpOnly  = true,
-            Secure    = true,
-            SameSite  = SameSiteMode.Strict,
-            Expires   = expires
-        });
+            HttpOnly = true,
+            Secure   = true,
+            SameSite = sameSite,
+            Path     = "/api/auth"
+        };
     }
 }

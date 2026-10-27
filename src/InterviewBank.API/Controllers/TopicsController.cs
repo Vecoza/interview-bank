@@ -24,6 +24,7 @@ public class TopicsController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         var topics = await _db.Topics
+            .Where(t => t.IsSystem || t.CreatedByUserId == userId)
             .OrderBy(t => t.IsSystem ? 0 : 1)   // system topics first
             .ThenBy(t => t.Name)
             .Select(t => new TopicDto
@@ -45,8 +46,13 @@ public class TopicsController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
+        var name = dto.Name.Trim();
+        if (name.Length == 0)
+            return BadRequest(new { error = "Topic name is required." });
+
         var exists = await _db.Topics.AnyAsync(t =>
-            t.Name.ToLower() == dto.Name.ToLower());
+            (t.IsSystem || t.CreatedByUserId == userId) &&
+            t.Name.ToLower() == name.ToLower());
 
         if (exists)
             return Conflict(new { error = "A topic with that name already exists." });
@@ -54,7 +60,7 @@ public class TopicsController : ControllerBase
         var topic = new Topic
         {
             Id              = Guid.NewGuid(),
-            Name            = dto.Name.Trim(),
+            Name            = name,
             IsSystem        = false,
             CreatedByUserId = userId
         };
@@ -84,7 +90,10 @@ public class TopicsController : ControllerBase
             return BadRequest(new { error = "System topics cannot be deleted." });
 
         if (topic.CreatedByUserId != userId)
-            return Forbid();
+            return NotFound();
+
+        if (await _db.Questions.AnyAsync(q => q.TopicId == id))
+            return Conflict(new { error = "Move or delete the questions in this topic first." });
 
         _db.Topics.Remove(topic);
         await _db.SaveChangesAsync();

@@ -45,48 +45,79 @@ public class MockInterviewService
         return await query.Take(dto.QuestionCount).ToListAsync();
     }
 
-    public async Task<MockInterviewSession> SaveSessionAsync(
-        string userId,
-        Guid sessionId,
-        StartSessionDto config,
-        DateTimeOffset startedAt,
-        List<SubmitAnswerDto> answers)
+    /// <summary>
+    /// Persists an in-progress session so it survives restarts and works across domains
+    /// (no server-side cookie session needed).
+    /// </summary>
+    public async Task<MockInterviewSession> StartSessionAsync(string userId, StartSessionDto dto, List<Question> questions)
     {
         var session = new MockInterviewSession
         {
-            Id              = sessionId,
+            Id              = Guid.NewGuid(),
             UserId          = userId,
-            StartedAt       = startedAt,
-            CompletedAt     = DateTimeOffset.UtcNow,
-            TotalQuestions  = answers.Count,
-            TimePerQuestion = config.TimePerQuestion
+            StartedAt       = DateTimeOffset.UtcNow,
+            TotalQuestions  = questions.Count,
+            TimePerQuestion = dto.TimePerQuestion
         };
 
+        for (var i = 0; i < questions.Count; i++)
+        {
+            session.SessionQuestions.Add(new SessionQuestion
+            {
+                Id            = Guid.NewGuid(),
+                SessionId     = session.Id,
+                QuestionId    = questions[i].Id,
+                QuestionOrder = i + 1
+            });
+        }
+
         _db.MockInterviewSessions.Add(session);
+        await _db.SaveChangesAsync();
+        return session;
+    }
+
+    /// <summary>
+    /// Records answers for a started session and updates spaced-repetition state.
+    /// Returns null when the session does not exist, belongs to someone else, or is already completed.
+    /// </summary>
+    public async Task<MockInterviewSession?> CompleteSessionAsync(string userId, Guid sessionId, List<SubmitAnswerDto> answers)
+    {
+        var session = await _db.MockInterviewSessions
+            .Include(s => s.SessionQuestions)
+                .ThenInclude(sq => sq.Question)
+            .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId);
+
+        if (session is null || session.CompletedAt is not null)
+            return null;
+
+        var now       = DateTimeOffset.UtcNow;
+        var byQuestion = session.SessionQuestions.ToDictionary(sq => sq.QuestionId);
 
         foreach (var a in answers)
         {
-            _db.SessionQuestions.Add(new SessionQuestion
-            {
-                Id               = Guid.NewGuid(),
-                SessionId        = session.Id,
-                QuestionId       = a.QuestionId,
-                QuestionOrder    = answers.IndexOf(a) + 1,
-                UserAnswer       = a.UserAnswer,
-                TimeTakenSeconds = a.TimeTakenSeconds,
-                SelfAssessment   = (SelfAssessment)a.SelfAssessment
-            });
+            // Ignore answers for questions that were not part of this session
+            if (!byQuestion.TryGetValue(a.QuestionId, out var sq) || sq.SelfAssessment is not null)
+                continue;
 
-            var question = await _db.Questions.FindAsync(a.QuestionId);
-            if (question is null || question.UserId != userId) continue;
+            sq.UserAnswer       = a.UserAnswer;
+            sq.TimeTakenSeconds = Math.Min(a.TimeTakenSeconds, session.TimePerQuestion);
+            sq.SelfAssessment   = (SelfAssessment)a.SelfAssessment;
 
+            var question = sq.Question;
             question.PracticeCount++;
-            question.LastPracticedAt = DateTimeOffset.UtcNow;
+            question.LastPracticedAt = now;
             question.IsPracticed     = true;
-            question.UpdatedAt       = DateTimeOffset.UtcNow;
+            question.UpdatedAt       = now;
 
             SpacedRepetitionService.Apply(question, a.SelfAssessment);
         }
+
+        // Questions the user never reached are dropped so they don't skew the stats
+        var unanswered = session.SessionQuestions.Where(sq => sq.SelfAssessment is null).ToList();
+        _db.SessionQuestions.RemoveRange(unanswered);
+
+        session.TotalQuestions = session.SessionQuestions.Count - unanswered.Count;
+        session.CompletedAt    = now;
 
         await _db.SaveChangesAsync();
         return session;
