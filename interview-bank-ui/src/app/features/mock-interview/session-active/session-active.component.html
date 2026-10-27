@@ -39,6 +39,11 @@
         {{ q.text }}
       </h2>
 
+      @if (submitError()) {
+        <p style="width:100%;margin:0;padding:12px 16px;border-radius:10px;font-size:13px;
+                  color:var(--danger);background:rgba(239,68,68,0.08);">{{ submitError() }}</p>
+      }
+
       <!-- ── YES / NO QUESTION ─────────────────────────────────────── -->
       @if (isYesNo()) {
 
@@ -130,8 +135,20 @@
             </div>
           }
 
+          <div style="width:100%;">
+            <p style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;
+                      letter-spacing:0.5px;margin:0 0 10px;">Model answer</p>
+            @if (q.expectedAnswer) {
+              <pre class="notes-block">{{ q.expectedAnswer }}</pre>
+            } @else {
+              <p style="margin:0;font-size:13px;color:var(--text-muted);">
+                No model answer saved for this question. Add one to enable AI grading.
+              </p>
+            }
+          </div>
+
           <!-- AI accuracy check -->
-          @if (userAnswer()) {
+          @if (userAnswer() && q.expectedAnswer) {
             <div style="width:100%;border:1px solid var(--border);border-radius:14px;padding:16px;
                         background:var(--bg-elevated);">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">

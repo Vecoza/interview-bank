@@ -1,6 +1,5 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LibraryQuestion } from './library.service';
 
@@ -20,6 +19,7 @@ export interface SessionQuestion {
   questionOrder: number;
   questionType: number;
   correctAnswer?: string;
+  expectedAnswer?: string | null;
 }
 
 export interface AiEvaluation {
@@ -108,6 +108,9 @@ export class MockInterviewService {
   }
 
   setActiveSession(session: ActiveSession) {
+    this.isLocalSession.set(false);
+    this.localLibraryQuestions = [];
+    this.sessionSummary.set(null);
     this.activeSession.set(session);
   }
 
@@ -121,10 +124,6 @@ export class MockInterviewService {
     }, { withCredentials: true });
   }
 
-  getLocalExpectedAnswer(questionId: string): string | null {
-    return this.localLibraryQuestions.find(q => q.id === questionId)?.expectedAnswer ?? null;
-  }
-
   startLocalSession(questions: LibraryQuestion[], timePerQuestion: number) {
     this.localLibraryQuestions = questions;
     const sessionQuestions: SessionQuestion[] = questions.map((q, i) => ({
@@ -134,7 +133,8 @@ export class MockInterviewService {
       difficulty: q.difficulty,
       questionOrder: i + 1,
       questionType: 0,
-      correctAnswer: undefined
+      correctAnswer: undefined,
+      expectedAnswer: q.expectedAnswer
     }));
     this.isLocalSession.set(true);
     this.activeSession.set({

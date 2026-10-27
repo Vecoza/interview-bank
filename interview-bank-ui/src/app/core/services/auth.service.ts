@@ -1,7 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { tap, catchError, EMPTY, of } from 'rxjs';
+import { tap, catchError, EMPTY, of, Observable, finalize, shareReplay } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface AuthResponse {
@@ -43,24 +43,38 @@ export class AuthService {
   logout() {
     this.http
       .post(`${this.api}/logout`, {}, { withCredentials: true })
-      .pipe(catchError(() => EMPTY))
-      .subscribe(() => {
-        this.clearSession();
-        this.router.navigate(['/login']);
-      });
-  }
-
-  refresh() {
-    return this.http
-      .post<AuthResponse>(`${this.api}/refresh`, {}, { withCredentials: true })
       .pipe(
-        tap(res => this.setSession(res)),
-        catchError(() => {
+        catchError(() => EMPTY),
+        finalize(() => {
           this.clearSession();
           this.router.navigate(['/login']);
-          return EMPTY;
         })
-      );
+      )
+      .subscribe();
+  }
+
+  private refreshInFlight: Observable<AuthResponse> | null = null;
+
+  /**
+   * Refresh tokens are single-use, so concurrent 401s must share one refresh call;
+   * otherwise the second call presents an already-rotated token and logs the user out.
+   */
+  refresh(): Observable<AuthResponse> {
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = this.http
+        .post<AuthResponse>(`${this.api}/refresh`, {}, { withCredentials: true })
+        .pipe(
+          tap(res => this.setSession(res)),
+          catchError(() => {
+            this.clearSession();
+            this.router.navigate(['/login']);
+            return EMPTY;
+          }),
+          finalize(() => (this.refreshInFlight = null)),
+          shareReplay(1)
+        );
+    }
+    return this.refreshInFlight;
   }
 
   tryRestore() {

@@ -23,7 +23,8 @@ export class SessionSummaryComponent implements OnInit {
   private router = inject(Router);
   private mis    = inject(MockInterviewService);
 
-  summary = this.mis.sessionSummary;
+  summary          = this.mis.sessionSummary;
+  isLibrarySession = this.mis.isLocalSession;
 
   ngOnInit() {
     if (!this.summary()) this.router.navigate(['/mock-interview']);

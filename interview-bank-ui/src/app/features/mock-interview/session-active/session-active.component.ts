@@ -37,6 +37,7 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
   isRevealed     = signal(false);
   selfAssessment = signal<number | null>(null);
   submitting     = signal(false);
+  submitError    = signal<string | null>(null);
 
   yesNoAnswer    = signal<'Yes' | 'No' | null>(null);
   yesNoCorrect   = signal<boolean | null>(null);
@@ -123,13 +124,9 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
 
   checkWithAi() {
     const q = this.currentQuestion();
-    if (!q || !q.text || !this.userAnswer()) return;
+    if (!q || !this.userAnswer()) return;
 
-    const expectedAnswer = (this.session()?.questions ?? []).length > 0
-      ? this.getExpectedAnswerForAi(q.id)
-      : null;
-
-    if (!expectedAnswer) {
+    if (!q.expectedAnswer) {
       this.aiError.set('No model answer available to compare against.');
       return;
     }
@@ -138,23 +135,16 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
     this.aiResult.set(null);
     this.aiError.set(null);
 
-    this.mis.evaluateAnswer(q.text, expectedAnswer, this.userAnswer()).subscribe({
+    this.mis.evaluateAnswer(q.text, q.expectedAnswer, this.userAnswer()).subscribe({
       next: result => {
         this.aiResult.set(result);
         this.aiEvaluating.set(false);
       },
-      error: () => {
-        this.aiError.set('AI evaluation failed. Make sure Anthropic:ApiKey is set in the backend.');
+      error: err => {
+        this.aiError.set(err.error?.error ?? 'AI evaluation failed. Please try again.');
         this.aiEvaluating.set(false);
       }
     });
-  }
-
-  private getExpectedAnswerForAi(questionId: string): string | null {
-    if (this.mis.isLocalSession()) {
-      return this.mis.getLocalExpectedAnswer(questionId);
-    }
-    return null;
   }
 
   next() {
@@ -164,13 +154,16 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
 
     const taken = Math.round((Date.now() - this.questionStartTime) / 1000);
 
-    this.answers.push({
-      sessionId:        s.sessionId,
-      questionId:       q.id,
-      userAnswer:       this.userAnswer() || undefined,
-      timeTakenSeconds: Math.min(taken, s.timePerQuestion),
-      selfAssessment:   this.selfAssessment() ?? 3
-    });
+    // Guard against double-recording when "Finish" is retried after a failed save
+    if (!this.answers.some(a => a.questionId === q.id)) {
+      this.answers.push({
+        sessionId:        s.sessionId,
+        questionId:       q.id,
+        userAnswer:       this.userAnswer() || undefined,
+        timeTakenSeconds: Math.min(taken, s.timePerQuestion),
+        selfAssessment:   this.selfAssessment() ?? 3
+      });
+    }
 
     const nextIndex = this.currentIndex() + 1;
 
@@ -184,6 +177,7 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
 
   private finishSession() {
     this.submitting.set(true);
+    this.submitError.set(null);
 
     if (this.mis.isLocalSession()) {
       const summary = this.mis.completeLocal(this.answers);
@@ -200,7 +194,8 @@ export class SessionActiveComponent implements OnInit, OnDestroy {
         this.mis.setSummary(summary);
         this.router.navigate(['/mock-interview/summary']);
       },
-      error: () => {
+      error: err => {
+        this.submitError.set(err.error?.error ?? 'Could not save the session. Please try again.');
         this.submitting.set(false);
       }
     });
